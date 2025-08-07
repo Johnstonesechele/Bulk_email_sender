@@ -1,0 +1,18 @@
+<RCC>
+    <qresource prefix="/">
+        <file>app.ico</file>
+        <file>logo.png</file>
+        <file>email-icon.png</file>
+        <file>campaign-icon.png</file>
+        <file>history-icon.png</file>
+        <file>settings-icon.png</file>
+    </qresource>
+    <qresource prefix="/styles">
+        <file>dark-theme.qss</file>
+    </qresource>
+    <qresource prefix="/templates">
+        <file>welcome-template.html</file>
+        <file>newsletter-template.html</file>
+        <file>promotional-template.html</file>
+    </qresource>
+</RCC>
