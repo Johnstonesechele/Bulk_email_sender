@@ -3,7 +3,7 @@ echo Building Bulk Email Manager...
 
 REM Check if Qt6 is installed
 if not exist "C:\Qt\6.9.1\mingw_64\bin\qmake.exe" (
-    echo Qt6 not found at C:\Qt\6.2.0\msvc2019_64
+    echo Qt6 not found at C:\Qt\6.9.1\mingw_64
     echo Please install Qt6 or update the path in this script
     pause
     exit /b 1
@@ -15,7 +15,7 @@ cd build
 
 REM Configure with CMake
 echo Configuring with CMake...
-cmake .. -DCMAKE_PREFIX_PATH="C:/Qt/6.2.0/msvc2019_64" -G "Visual Studio 16 2019" -A x64
+cmake .. -DCMAKE_PREFIX_PATH="C:/Qt/6.9.1/mingw_64" -G "MinGW Makefiles"
 
 if %ERRORLEVEL% neq 0 (
     echo CMake configuration failed
