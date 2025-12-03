@@ -47,6 +47,28 @@ if exist "C:\Qt\6.9.1\mingw_64\bin\Qt6Core.dll" (
     copy "C:\Qt\6.9.1\mingw_64\bin\Qt6Gui.dll" "."
 )
 
+REM Copy Qt platform plugins
+echo Copying Qt platform plugins...
+if not exist "platforms" mkdir platforms
+if exist "C:\Qt\6.9.1\mingw_64\plugins\platforms\qwindows.dll" (
+    copy "C:\Qt\6.9.1\mingw_64\plugins\platforms\qwindows.dll" "platforms\"
+)
+
+REM Copy other essential plugins
+if not exist "imageformats" mkdir imageformats
+if exist "C:\Qt\6.9.1\mingw_64\plugins\imageformats\qjpeg.dll" (
+    copy "C:\Qt\6.9.1\mingw_64\plugins\imageformats\qjpeg.dll" "imageformats\"
+)
+if exist "C:\Qt\6.9.1\mingw_64\plugins\imageformats\qpng.dll" (
+    copy "C:\Qt\6.9.1\mingw_64\plugins\imageformats\qpng.dll" "imageformats\"
+)
+
+REM Copy SQL drivers
+if not exist "sqldrivers" mkdir sqldrivers
+if exist "C:\Qt\6.9.1\mingw_64\plugins\sqldrivers\qsqlite.dll" (
+    copy "C:\Qt\6.9.1\mingw_64\plugins\sqldrivers\qsqlite.dll" "sqldrivers\"
+)
+
 echo.
 echo Build completed! You can now run BulkEmailApp.exe from the build folder.
 pause
