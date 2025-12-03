@@ -93,7 +93,7 @@ private:
     QPushButton* insertVariableBtn;
     
     // Preview
-    QWebEngineView* previewWebView;
+    // QWebEngineView* previewWebView; // Temporarily commented out
     QTextEdit* previewTextEdit;
     
     // Buttons
