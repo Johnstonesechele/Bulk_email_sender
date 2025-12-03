@@ -47,5 +47,5 @@ if exist "C:\Qt\6.9.1\mingw_64\bin\Qt6Core.dll" (
 )
 
 echo.
-echo Build completed! You can now run BulkEmailApp.exe from the Release folder.
+echo Build completed! You can now run BulkEmailApp.exe from the build folder.
 pause
