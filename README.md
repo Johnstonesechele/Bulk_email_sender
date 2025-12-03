@@ -2,6 +2,38 @@
 
 A modern, feature-rich bulk email application built with Qt6 and C++ for Windows. This application provides a comprehensive solution for managing email campaigns, tracking delivery status, and cleaning email data.
 
+## 🆕 **NEW: Email Template System**
+
+### Template Features
+- **Built-in Templates**: Pre-designed templates for common use cases
+  - Welcome emails
+  - Newsletters  
+  - Promotional campaigns
+  - Event invitations
+  - Company announcements
+
+- **Custom Templates**: Create your own email templates
+- **Variable/Merge Fields**: Personalize emails with `{{variable_name}}` syntax
+- **Template Management**: Save, edit, delete, and organize templates
+- **Live Preview**: See how templates look with sample data
+- **Template Categories**: Organize templates by type and category
+
+### Template Variables
+Common variables you can use:
+- `{{first_name}}`, `{{last_name}}` - Recipient name
+- `{{email}}` - Recipient email address
+- `{{company_name}}` - Your company name
+- `{{company_address}}` - Your company address
+- `{{phone}}`, `{{website}}` - Contact information
+- Any custom variables you define
+
+### How to Use Templates
+1. **Select Template**: Choose from dropdown in Email Management tab
+2. **Create New**: Click "New Template" to create custom template
+3. **Edit Existing**: Select template and click "Edit Template"
+4. **Personalize**: Templates automatically populate with variable data
+5. **Preview**: Use the template editor's preview feature
+
 ## Features
 
 ### Core Features
