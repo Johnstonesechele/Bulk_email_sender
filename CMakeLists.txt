@@ -4,6 +4,9 @@ project(BulkEmailApp VERSION 1.0.0 LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+# Set Qt installation path for version 6.9.1
+set(CMAKE_PREFIX_PATH "C:/Qt")
+
 # Find Qt6 components
 find_package(Qt6 REQUIRED COMPONENTS Core Widgets Network Sql)
 

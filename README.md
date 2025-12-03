@@ -4,26 +4,26 @@ A modern, feature-rich bulk email application built with Qt6 and C++ for Windows
 
 ## Features
 
-### 🎯 Core Features
+### Core Features
 - **Bulk Email Sending**: Send emails to multiple recipients with customizable content
 - **Email Campaign Management**: Create, track, and manage email campaigns
 - **Real-time Status Tracking**: Monitor email delivery status (sent, failed, pending)
 - **Data Cleaning**: Clean and validate email addresses automatically
 - **Campaign History**: View and export campaign history with detailed statistics
 
-### 🎨 User Interface
+### User Interface
 - **Modern Dark Theme**: Beautiful dark blue and dark gold color scheme
 - **Tabbed Interface**: Organized into Email Management, Campaign History, and Data Cleaning tabs
 - **Responsive Design**: Clean and intuitive user interface
 - **Progress Tracking**: Real-time progress bars for bulk operations
 
-### 📊 Data Management
+### Data Management
 - **SQLite Database**: Local data storage for campaigns and email lists
 - **CSV Import/Export**: Import email lists from CSV files and export results
 - **Email Validation**: Comprehensive email validation with format checking
 - **Duplicate Detection**: Automatic detection and removal of duplicate emails
 
-### 🔧 Technical Features
+### Technical Features
 - **SMTP Support**: Configurable SMTP server settings
 - **Email Validation**: RFC 5322 compliant email validation
 - **Error Handling**: Comprehensive error handling and user feedback

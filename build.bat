@@ -2,7 +2,7 @@
 echo Building Bulk Email Manager...
 
 REM Check if Qt6 is installed
-if not exist "C:\Qt\6.2.0\msvc2019_64\bin\qmake.exe" (
+if not exist "C:\Qt\6.9.1\mingw_64\bin\qmake.exe" (
     echo Qt6 not found at C:\Qt\6.2.0\msvc2019_64
     echo Please install Qt6 or update the path in this script
     pause
