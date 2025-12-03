@@ -15,7 +15,7 @@
 #include <QGridLayout>
 #include <QGroupBox>
 #include <QPlainTextEdit>
-#include <QWebEngineView>
+// #include <QWebEngineView> // Temporarily commented out
 #include "emailtemplate.h"
 #include "templatemanager.h"
 
