@@ -1,4 +1,5 @@
 #include "mainwindow.h"
+#include "templateeditor.h"
 #include <QHeaderView>
 #include <QApplication>
 #include <QScreen>
