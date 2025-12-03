@@ -51,6 +51,13 @@ private slots:
     void importEmails();
     void validateEmails();
     void cleanData();
+    
+    // Template management slots
+    void newTemplate();
+    void editTemplate();
+    void deleteTemplate();
+    void loadTemplate();
+    void saveAsTemplate();
 
 private:
     void setupUI();
@@ -86,6 +93,12 @@ private:
     QPushButton *validateButton;
     QPushButton *importButton;
     QProgressBar *progressBar;
+    
+    // Template controls
+    QComboBox *templateCombo;
+    QPushButton *newTemplateButton;
+    QPushButton *editTemplateButton;
+    QPushButton *deleteTemplateButton;
     
     // Campaign History Tab
     QWidget *historyTab;
