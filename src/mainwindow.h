@@ -2,6 +2,7 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
+#include <QStatusBar>
 #include <QTableWidget>
 #include <QTextEdit>
 #include <QLineEdit>
@@ -52,6 +53,9 @@ private slots:
 
 private:
     void setupUI();
+    void setupEmailTab();
+    void setupHistoryTab();
+    void setupCleaningTab();
     void setupConnections();
     void loadCampaignHistory();
     void updateStatusBar(const QString &message);

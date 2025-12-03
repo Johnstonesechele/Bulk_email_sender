@@ -1,4 +1,5 @@
 @echo off
+set QTFRAMEWORK_BYPASS_LICENSE_CHECK=1
 echo Building Bulk Email Manager...
 
 REM Check if Qt6 is installed
