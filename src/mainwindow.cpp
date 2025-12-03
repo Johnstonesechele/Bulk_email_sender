@@ -15,6 +15,7 @@ MainWindow::MainWindow(QWidget *parent)
 {
     setupUI();
     setupConnections();
+    updateTemplateCombo();
     loadCampaignHistory();
     
     // Center the window on screen
