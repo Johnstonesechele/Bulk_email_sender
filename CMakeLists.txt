@@ -5,7 +5,7 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Find Qt6 components
-find_package(Qt6 REQUIRED COMPONENTS Core Widgets Network Sql WebEngineWidgets)
+find_package(Qt6 REQUIRED COMPONENTS Core Widgets Network Sql)
 
 # Set up Qt6
 set(CMAKE_AUTOMOC ON)
@@ -22,6 +22,7 @@ set(SOURCES
     src/emailvalidator.cpp
     src/emailtemplate.cpp
     src/templatemanager.cpp
+    src/templateeditor.cpp
 )
 
 set(HEADERS
@@ -48,7 +49,6 @@ target_link_libraries(BulkEmailApp
     Qt6::Widgets 
     Qt6::Network 
     Qt6::Sql
-    Qt6::WebEngineWidgets
 )
 
 # Include directories
