@@ -10,6 +10,7 @@ MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , emailManager(new EmailManager(this))
     , database(new Database(this))
+    , templateManager(new TemplateManager(this))
     , statusTimer(new QTimer(this))
 {
     setupUI();
@@ -104,6 +105,26 @@ void MainWindow::setupEmailTab()
     configLayout->addWidget(smtpPassword, 2, 3);
     
     emailLayout->addWidget(configGroup);
+    
+    // Template group
+    QGroupBox *templateGroup = new QGroupBox("Email Templates");
+    QHBoxLayout *templateLayout = new QHBoxLayout(templateGroup);
+    
+    templateLayout->addWidget(new QLabel("Template:"));
+    templateCombo = new QComboBox();
+    templateCombo->setMinimumWidth(200);
+    templateLayout->addWidget(templateCombo);
+    
+    newTemplateButton = new QPushButton("New Template");
+    editTemplateButton = new QPushButton("Edit Template");
+    deleteTemplateButton = new QPushButton("Delete Template");
+    
+    templateLayout->addWidget(newTemplateButton);
+    templateLayout->addWidget(editTemplateButton);
+    templateLayout->addWidget(deleteTemplateButton);
+    templateLayout->addStretch();
+    
+    emailLayout->addWidget(templateGroup);
     
     // Email content group
     QGroupBox *contentGroup = new QGroupBox("Email Content");
