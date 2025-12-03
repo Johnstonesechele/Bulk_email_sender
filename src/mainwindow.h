@@ -119,6 +119,7 @@ private:
     // Core components
     EmailManager *emailManager;
     Database *database;
+    TemplateManager *templateManager;
 };
 
 #endif // MAINWINDOW_H
