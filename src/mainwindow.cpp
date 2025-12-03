@@ -268,6 +268,12 @@ void MainWindow::setupConnections()
     // Cleaning connections
     connect(cleanButton, &QPushButton::clicked, this, &MainWindow::cleanData);
     connect(exportCleanedButton, &QPushButton::clicked, this, &MainWindow::exportResults);
+    
+    // Template management connections
+    connect(newTemplateButton, &QPushButton::clicked, this, &MainWindow::newTemplate);
+    connect(editTemplateButton, &QPushButton::clicked, this, &MainWindow::editTemplate);
+    connect(deleteTemplateButton, &QPushButton::clicked, this, &MainWindow::deleteTemplate);
+    connect(templateCombo, &QComboBox::currentIndexChanged, this, &MainWindow::loadTemplate);
 }
 
 void MainWindow::sendBulkEmails()
@@ -405,4 +411,139 @@ void MainWindow::showError(const QString &title, const QString &message)
 void MainWindow::showSuccess(const QString &title, const QString &message)
 {
     QMessageBox::information(this, title, message);
+}
+
+// Template management slots
+void MainWindow::newTemplate()
+{
+    TemplateEditor *editor = new TemplateEditor(templateManager, this);
+    if (editor->exec() == QDialog::Accepted) {
+        updateTemplateCombo();
+        updateStatusBar("New template created successfully");
+    }
+    editor->deleteLater();
+}
+
+void MainWindow::editTemplate()
+{
+    QString templateId = templateCombo->currentData().toString();
+    if (templateId.isEmpty()) {
+        showError("No Template", "Please select a template to edit.");
+        return;
+    }
+    
+    EmailTemplate* emailTemplate = templateManager->getTemplate(templateId);
+    if (!emailTemplate) {
+        showError("Template Not Found", "The selected template could not be found.");
+        return;
+    }
+    
+    TemplateEditor *editor = new TemplateEditor(templateManager, emailTemplate, this);
+    if (editor->exec() == QDialog::Accepted) {
+        updateTemplateCombo();
+        updateStatusBar("Template updated successfully");
+    }
+    editor->deleteLater();
+}
+
+void MainWindow::deleteTemplate()
+{
+    QString templateId = templateCombo->currentData().toString();
+    if (templateId.isEmpty()) {
+        showError("No Template", "Please select a template to delete.");
+        return;
+    }
+    
+    EmailTemplate* emailTemplate = templateManager->getTemplate(templateId);
+    if (!emailTemplate) {
+        showError("Template Not Found", "The selected template could not be found.");
+        return;
+    }
+    
+    if (templateManager->isBuiltInTemplate(templateId)) {
+        showError("Cannot Delete", "Built-in templates cannot be deleted.");
+        return;
+    }
+    
+    QMessageBox::StandardButton reply = QMessageBox::question(this, 
+        "Delete Template", 
+        QString("Are you sure you want to delete the template '%1'?").arg(emailTemplate->getName()),
+        QMessageBox::Yes | QMessageBox::No, 
+        QMessageBox::No);
+        
+    if (reply == QMessageBox::Yes) {
+        if (templateManager->deleteTemplate(templateId)) {
+            updateTemplateCombo();
+            updateStatusBar("Template deleted successfully");
+        } else {
+            showError("Delete Failed", "Failed to delete the template.");
+        }
+    }
+}
+
+void MainWindow::loadTemplate()
+{
+    QString templateId = templateCombo->currentData().toString();
+    if (templateId.isEmpty()) {
+        return;
+    }
+    
+    EmailTemplate* emailTemplate = templateManager->getTemplate(templateId);
+    if (!emailTemplate) {
+        showError("Template Not Found", "The selected template could not be found.");
+        return;
+    }
+    
+    // Get sample variables for preview
+    QMap<QString, QString> sampleVars;
+    sampleVars["first_name"] = "John";
+    sampleVars["last_name"] = "Doe";
+    sampleVars["email"] = "john.doe@example.com";
+    sampleVars["company_name"] = "Your Company";
+    sampleVars["company_address"] = "123 Main St, City, State";
+    
+    // Load template content with sample variables
+    subjectLine->setText(emailTemplate->processSubject(sampleVars));
+    emailContent->setHtml(emailTemplate->processTemplate(sampleVars));
+    
+    updateStatusBar(QString("Template '%1' loaded").arg(emailTemplate->getName()));
+}
+
+void MainWindow::saveAsTemplate()
+{
+    if (subjectLine->text().isEmpty() && emailContent->toPlainText().isEmpty()) {
+        showError("No Content", "Please enter email subject and content before saving as template.");
+        return;
+    }
+    
+    EmailTemplate* emailTemplate = new EmailTemplate();
+    emailTemplate->setName("New Template");
+    emailTemplate->setSubject(subjectLine->text());
+    emailTemplate->setHtmlContent(emailContent->toHtml());
+    emailTemplate->setTextContent(emailContent->toPlainText());
+    emailTemplate->setType(TemplateType::Custom);
+    
+    TemplateEditor *editor = new TemplateEditor(templateManager, emailTemplate, this);
+    if (editor->exec() == QDialog::Accepted) {
+        updateTemplateCombo();
+        updateStatusBar("Template saved successfully");
+    } else {
+        delete emailTemplate;
+    }
+    editor->deleteLater();
+}
+
+void MainWindow::updateTemplateCombo()
+{
+    templateCombo->clear();
+    templateCombo->addItem("-- Select Template --", "");
+    
+    QList<EmailTemplate*> templates = templateManager->getAllTemplates();
+    for (EmailTemplate* emailTemplate : templates) {
+        QString displayName = emailTemplate->getName();
+        if (templateManager->isBuiltInTemplate(emailTemplate->getId())) {
+            displayName += " (Built-in)";
+        }
+        templateCombo->addItem(displayName, emailTemplate->getId());
+    }
 }
