@@ -20,6 +20,7 @@
 #include <QTimer>
 #include "emailmanager.h"
 #include "database.h"
+#include "templatemanager.h"
 
 QT_BEGIN_NAMESPACE
 class QAction;
