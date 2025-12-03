@@ -25,7 +25,7 @@ if %ERRORLEVEL% neq 0 (
 
 REM Build the project
 echo Building project...
-cmake --build . --config Release
+mingw32-make
 
 if %ERRORLEVEL% neq 0 (
     echo Build failed
