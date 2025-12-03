@@ -34,16 +34,16 @@ if %ERRORLEVEL% neq 0 (
 )
 
 echo Build completed successfully!
-echo Executable location: build\Release\BulkEmailApp.exe
+echo Executable location: build\BulkEmailApp.exe
 
 REM Copy Qt DLLs if needed
 echo Copying Qt DLLs...
-if exist "C:\Qt\6.2.0\msvc2019_64\bin\Qt6Core.dll" (
-    copy "C:\Qt\6.2.0\msvc2019_64\bin\Qt6Core.dll" "Release\"
-    copy "C:\Qt\6.2.0\msvc2019_64\bin\Qt6Widgets.dll" "Release\"
-    copy "C:\Qt\6.2.0\msvc2019_64\bin\Qt6Network.dll" "Release\"
-    copy "C:\Qt\6.2.0\msvc2019_64\bin\Qt6Sql.dll" "Release\"
-    copy "C:\Qt\6.2.0\msvc2019_64\bin\Qt6Gui.dll" "Release\"
+if exist "C:\Qt\6.9.1\mingw_64\bin\Qt6Core.dll" (
+    copy "C:\Qt\6.9.1\mingw_64\bin\Qt6Core.dll" "."
+    copy "C:\Qt\6.9.1\mingw_64\bin\Qt6Widgets.dll" "."
+    copy "C:\Qt\6.9.1\mingw_64\bin\Qt6Network.dll" "."
+    copy "C:\Qt\6.9.1\mingw_64\bin\Qt6Sql.dll" "."
+    copy "C:\Qt\6.9.1\mingw_64\bin\Qt6Gui.dll" "."
 )
 
 echo.
