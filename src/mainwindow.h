@@ -69,6 +69,7 @@ private:
     void updateStatusBar(const QString &message);
     void showError(const QString &title, const QString &message);
     void showSuccess(const QString &title, const QString &message);
+    void updateTemplateCombo();
 
     // UI Components
     QTabWidget *tabWidget;
