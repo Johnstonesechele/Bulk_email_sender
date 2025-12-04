@@ -33,8 +33,7 @@ SmtpEmailSender::SmtpEmailSender(QObject *parent)
     socket = new QSslSocket(this);
     connect(socket, &QSslSocket::connected, this, &SmtpEmailSender::onSocketConnected);
     connect(socket, &QSslSocket::disconnected, this, &SmtpEmailSender::onSocketDisconnected);
-    connect(socket, QOverload<QAbstractSocket::SocketError>::of(&QSslSocket::error), 
-            this, &SmtpEmailSender::onSocketError);
+    connect(socket, &QSslSocket::errorOccurred, this, &SmtpEmailSender::onSocketError);
     connect(socket, &QSslSocket::sslErrors, this, &SmtpEmailSender::onSslErrors);
     connect(socket, &QSslSocket::readyRead, this, &SmtpEmailSender::onSocketReadyRead);
 }
