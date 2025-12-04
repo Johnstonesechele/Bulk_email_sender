@@ -21,6 +21,8 @@
 #include "emailmanager.h"
 #include "database.h"
 #include "templatemanager.h"
+#include "csvreader.h"
+#include "smtpemailsender.h"
 
 QT_BEGIN_NAMESPACE
 class QAction;
@@ -121,6 +123,8 @@ private:
     EmailManager *emailManager;
     Database *database;
     TemplateManager *templateManager;
+    CsvReader *csvReader;
+    SmtpEmailSender *smtpSender;
 };
 
 #endif // MAINWINDOW_H

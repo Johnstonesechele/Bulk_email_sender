@@ -11,6 +11,8 @@ MainWindow::MainWindow(QWidget *parent)
     , emailManager(new EmailManager(this))
     , database(new Database(this))
     , templateManager(new TemplateManager(this))
+    , csvReader(new CsvReader(this))
+    , smtpSender(new SmtpEmailSender(this))
     , statusTimer(new QTimer(this))
 {
     setupUI();
@@ -303,10 +305,45 @@ void MainWindow::sendBulkEmails()
 
 void MainWindow::loadEmailList()
 {
-    QString fileName = QFileDialog::getOpenFileName(this, "Load Email List", "", "CSV Files (*.csv);;All Files (*)");
+    QString fileName = QFileDialog::getOpenFileName(this, "Load Email List", "", "CSV Files (*.csv);;Excel Files (*.xlsx);;All Files (*)");
     if (!fileName.isEmpty()) {
-        // TODO: Implement loading logic
-        updateStatusBar("Email list loaded from " + fileName);
+        try {
+            CsvData data;
+            bool success = false;
+            
+            if (fileName.endsWith(".xlsx", Qt::CaseInsensitive)) {
+                success = csvReader->readExcel(fileName, data);
+            } else {
+                success = csvReader->readCsv(fileName, data);
+            }
+            
+            if (success) {
+                // Clear existing emails
+                emailTable->setRowCount(0);
+                
+                // Add imported data to table
+                for (const auto &row : data.data) {
+                    if (row.size() >= 2) { // At least email and name
+                        int tableRow = emailTable->rowCount();
+                        emailTable->insertRow(tableRow);
+                        emailTable->setItem(tableRow, 0, new QTableWidgetItem(row[0])); // Email
+                        emailTable->setItem(tableRow, 1, new QTableWidgetItem(row.size() > 1 ? row[1] : "")); // Name
+                        emailTable->setItem(tableRow, 2, new QTableWidgetItem("Pending")); // Status
+                        emailTable->setItem(tableRow, 3, new QTableWidgetItem("")); // Notes
+                    }
+                }
+                
+                updateStatusBar(QString("Successfully loaded %1 emails from %2")
+                               .arg(data.data.size()).arg(QFileInfo(fileName).fileName()));
+                showSuccess("Import Successful", 
+                           QString("Imported %1 emails from %2").arg(data.data.size()).arg(QFileInfo(fileName).fileName()));
+            } else {
+                showError("Import Failed", QString("Failed to import emails from %1:\n%2")
+                         .arg(QFileInfo(fileName).fileName(), csvReader->getLastError()));
+            }
+        } catch (const std::exception &e) {
+            showError("Import Error", QString("An error occurred while importing: %1").arg(e.what()));
+        }
     }
 }
 

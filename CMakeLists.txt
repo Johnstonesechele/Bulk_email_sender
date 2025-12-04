@@ -24,6 +24,8 @@ set(SOURCES
     src/templatemanager.cpp
     src/templateeditor.cpp
     src/htmlemailbuilder.cpp
+    src/csvreader.cpp
+    src/smtpemailsender.cpp
 )
 
 set(HEADERS
@@ -36,6 +38,8 @@ set(HEADERS
     src/templatemanager.h
     src/templateeditor.h
     src/htmlemailbuilder.h
+    src/csvreader.h
+    src/smtpemailsender.h
 )
 
 set(UI_FILES
