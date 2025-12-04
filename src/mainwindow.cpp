@@ -505,49 +505,48 @@ void MainWindow::sendBulkEmails()
         } else {
             // Plain text content
             textContent = editorContent;
-            htmlContent = QString("<html><body><p>%1</p></body></html>")
-                         .arg(editorContent.replace("\n", "<br>"));
-        }
     }
+    
+    // Create email messages for all recipients
+    QList<EmailMessage> emailMessages;
+    for (int row = 0; row < emailTable->rowCount(); ++row) {
+        QTableWidgetItem *emailItem = emailTable->item(row, 0);
+        QTableWidgetItem *nameItem = emailTable->item(row, 1);
+        
+        if (emailItem && !emailItem->text().isEmpty()) {
+            QString recipientEmail = emailItem->text().trimmed();
+            QString recipientName = nameItem ? nameItem->text().trimmed() : recipientEmail;
             
-            // Apply basic variable substitution for each recipient
-            for (int row = 0; row < emailTable->rowCount(); ++row) {
-                QTableWidgetItem *emailItem = emailTable->item(row, 0);
-                QTableWidgetItem *nameItem = emailTable->item(row, 1);
-                
-                if (emailItem && !emailItem->text().isEmpty()) {
-                    QString recipientEmail = emailItem->text().trimmed();
-                    QString recipientName = nameItem ? nameItem->text().trimmed() : recipientEmail;
-                    
-                    // Create personalized content
-                    QString personalizedHtml = htmlContent;
-                    QString personalizedText = textContent;
-                    
-                    // Replace common variables
-                    personalizedHtml.replace("{{name}}", recipientName, Qt::CaseInsensitive);
-                    personalizedHtml.replace("{{email}}", recipientEmail, Qt::CaseInsensitive);
-                    personalizedText.replace("{{name}}", recipientName, Qt::CaseInsensitive);
-                    personalizedText.replace("{{email}}", recipientEmail, Qt::CaseInsensitive);
-                    
-                    EmailMessage message;
-                    message.from = senderEmailAddr;
-                    message.fromName = senderNameText;
-                    message.to = recipientEmail;
-                    message.toName = recipientName;
-                    message.subject = subject;
-                    message.htmlBody = personalizedHtml;
-                    message.textBody = personalizedText;
-                    message.timestamp = QDateTime::currentDateTime();
-                    message.messageId = QString::number(row);
-                    
-                    emailMessages.append(message);
-                }
-            }
+            // Create personalized content
+            QString personalizedHtml = htmlContent;
+            QString personalizedText = textContent;
+            
+            // Replace common variables
+            personalizedHtml.replace("{{name}}", recipientName, Qt::CaseInsensitive);
+            personalizedHtml.replace("{{email}}", recipientEmail, Qt::CaseInsensitive);
+            personalizedHtml.replace("{{company}}", "", Qt::CaseInsensitive); // Add company support later
+            personalizedText.replace("{{name}}", recipientName, Qt::CaseInsensitive);
+            personalizedText.replace("{{email}}", recipientEmail, Qt::CaseInsensitive);
+            personalizedText.replace("{{company}}", "", Qt::CaseInsensitive);
+            
+            EmailMessage message;
+            message.from = senderEmailAddr;
+            message.fromName = senderNameText;
+            message.to = recipientEmail;
+            message.toName = recipientName;
+            message.subject = subject;
+            message.htmlBody = personalizedHtml;
+            message.textBody = personalizedText;
+            message.timestamp = QDateTime::currentDateTime();
+            message.messageId = QString::number(row);
+            
+            emailMessages.append(message);
         }
     }
     
-    // If no template, use plain text
     if (emailMessages.isEmpty()) {
+        showError("Error", "No valid email addresses found.");
+        return;
         for (int row = 0; row < emailTable->rowCount(); ++row) {
             QTableWidgetItem *emailItem = emailTable->item(row, 0);
             QTableWidgetItem *nameItem = emailTable->item(row, 1);
