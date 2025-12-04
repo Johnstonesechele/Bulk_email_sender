@@ -100,12 +100,43 @@ void EmailTemplate::setTags(const QStringList &tags)
 
 QString EmailTemplate::processTemplate(const QMap<QString, QString> &variables) const
 {
-    return processVariables(htmlContent, variables);
+    return htmlBuilder->generateHtmlEmail(htmlContent, variables);
 }
 
 QString EmailTemplate::processSubject(const QMap<QString, QString> &variables) const
 {
     return processVariables(subject, variables);
+}
+
+QString EmailTemplate::generateFinalHtml(const QMap<QString, QString> &variables) const
+{
+    return htmlBuilder->generateHtmlEmail(htmlContent, variables);
+}
+
+QString EmailTemplate::generatePlainText(const QMap<QString, QString> &variables) const
+{
+    return processVariables(textContent, variables);
+}
+
+QString EmailTemplate::getOptimizedHtml() const
+{
+    QMap<QString, QString> emptyVars;
+    return htmlBuilder->generateHtmlEmail(htmlContent, emptyVars);
+}
+
+bool EmailTemplate::isHtmlTemplate() const
+{
+    return !htmlContent.isEmpty();
+}
+
+QStringList EmailTemplate::getRequiredImages() const
+{
+    return htmlBuilder->extractImages(htmlContent);
+}
+
+QStringList EmailTemplate::validateEmailCompatibility() const
+{
+    return htmlBuilder->checkEmailCompatibility(htmlContent);
 }
 
 QStringList EmailTemplate::extractVariables() const
