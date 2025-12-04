@@ -255,12 +255,22 @@ The application includes comprehensive email validation:
 
 ## Data Storage
 
-The application uses SQLite for local data storage:
+The application uses SQLite for comprehensive data storage:
 
-- **Database Location**: `%APPDATA%/BulkEmailManager/bulk_email_manager.db`
+- **Database Location**: `%APPDATA%/BulkEmailManager/`
+  - `bulk_email_manager.db` - Main application database
+  - `contacts.db` - Contact list management
+  - `analytics.db` - Campaign analytics and reporting
 - **Tables**:
-  - `campaigns`: Email campaign information
-  - `emails`: Email addresses and delivery status
+  - `campaigns`: Email campaign information and metadata
+  - `emails`: Email addresses, delivery status, and tracking
+  - `contacts`: Contact information with custom fields
+  - `contact_lists`: Multiple contact list management
+  - `email_deliveries`: Detailed delivery tracking and analytics
+  - `email_blacklist`: Blacklisted email addresses with reasons
+  - `email_templates`: HTML email templates and variables
+- **Backup**: Automatic database backups with configurable retention
+- **Logs**: Comprehensive application logs in `%APPDATA%/BulkEmailManager/logs/`
 
 ## Troubleshooting
 
