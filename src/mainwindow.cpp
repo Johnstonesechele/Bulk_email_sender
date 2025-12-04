@@ -673,24 +673,31 @@ void MainWindow::exportResults()
     QString fileName = QFileDialog::getSaveFileName(this, "Export Results", "", "CSV Files (*.csv);;Excel Files (*.xlsx);;All Files (*)");
     if (!fileName.isEmpty()) {
         try {
-            CsvData data;
-            data.headers = {"Email", "Name", "Status", "Notes"};
+            // Create ContactData list from table with status
+            QList<ContactData> contacts;
             
-            // Collect results from table
             for (int row = 0; row < emailTable->rowCount(); ++row) {
-                QStringList rowData;
-                for (int col = 0; col < emailTable->columnCount(); ++col) {
-                    QTableWidgetItem *item = emailTable->item(row, col);
-                    rowData << (item ? item->text() : "");
+                QTableWidgetItem *emailItem = emailTable->item(row, 0);
+                QTableWidgetItem *nameItem = emailTable->item(row, 1);
+                QTableWidgetItem *statusItem = emailTable->item(row, 2);
+                QTableWidgetItem *notesItem = emailTable->item(row, 3);
+                
+                if (emailItem && !emailItem->text().isEmpty()) {
+                    ContactData contact;
+                    contact.email = emailItem->text();
+                    contact.fullName = nameItem ? nameItem->text() : "";
+                    // Add status and notes as custom fields
+                    contact.customFields["Status"] = statusItem ? statusItem->text() : "";
+                    contact.customFields["Notes"] = notesItem ? notesItem->text() : "";
+                    contacts.append(contact);
                 }
-                data.data.append(rowData);
             }
             
             bool success = false;
             if (fileName.endsWith(".xlsx", Qt::CaseInsensitive)) {
-                success = csvReader->writeExcel(fileName, data);
+                success = csvReader->exportToExcel(fileName, contacts);
             } else {
-                success = csvReader->writeCsv(fileName, data);
+                success = csvReader->exportToCsv(fileName, contacts);
             }
             
             if (success) {
@@ -699,8 +706,8 @@ void MainWindow::exportResults()
                 showSuccess("Export Successful", 
                            QString("Exported results to %1").arg(QFileInfo(fileName).fileName()));
             } else {
-                showError("Export Failed", QString("Failed to export results to %1:\n%2")
-                         .arg(QFileInfo(fileName).fileName(), csvReader->getLastError()));
+                showError("Export Failed", QString("Failed to export results to %1")
+                         .arg(QFileInfo(fileName).fileName()));
             }
         } catch (const std::exception &e) {
             showError("Export Error", QString("An error occurred while exporting: %1").arg(e.what()));
