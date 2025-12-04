@@ -100,16 +100,21 @@ Common variables you can use:
 - **Interactive Charts**: Visual analytics dashboard with delivery metrics and performance graphs
 
 ### Data Management
-- **SQLite Database**: Local data storage for campaigns and email lists
-- **CSV Import/Export**: Import email lists from CSV files and export results
-- **Email Validation**: Comprehensive email validation with format checking
-- **Duplicate Detection**: Automatic detection and removal of duplicate emails
+- **SQLite Database**: Local data storage for campaigns, contacts, analytics, and email lists
+- **CSV/Excel Import/Export**: Import email lists from CSV files and export comprehensive results
+- **Contact List Management**: Advanced contact organization with tags, custom fields, and multiple lists
+- **Email Validation**: Comprehensive email validation with RFC 5322 compliance
+- **Duplicate Detection**: Automatic detection and removal of duplicate emails across all lists
+- **Blacklist Management**: Sophisticated email blacklist with bounce tracking and automatic management
 
 ### Technical Features
-- **SMTP Support**: Configurable SMTP server settings
-- **Email Validation**: RFC 5322 compliant email validation
-- **Error Handling**: Comprehensive error handling and user feedback
-- **Cross-platform Ready**: Built with Qt6 for potential cross-platform support
+- **Advanced SMTP Support**: Full SMTP protocol with SSL/TLS, STARTTLS, connection pooling, and retry logic
+- **Network Diagnostics**: Built-in DNS resolution testing, connection validation, and network troubleshooting
+- **Comprehensive Analytics**: Real-time tracking with delivery metrics, provider analysis, and error reporting
+- **Advanced Logging**: Multi-level logging with file rotation, search capabilities, and export options
+- **Email Validation**: RFC 5322 compliant validation with domain verification and format checking
+- **Error Handling**: Comprehensive error handling with detailed user feedback and automatic recovery
+- **Cross-platform Ready**: Built with Qt6 for potential cross-platform support with Windows optimization
 
 ## Screenshots
 
