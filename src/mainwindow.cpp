@@ -5,6 +5,9 @@
 #include <QScreen>
 #include <QStyle>
 #include <QDateTime>
+#include <QRegularExpression>
+#include <QFileInfo>
+#include <QDialog>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -139,7 +142,58 @@ void MainWindow::setupEmailTab()
     
     contentLayout->addWidget(new QLabel("Message:"));
     emailContent = new QTextEdit();
-    emailContent->setPlaceholderText("Enter your email message here...");
+    emailContent->setPlaceholderText("Enter your email message here...\nYou can use HTML tags for formatting.");
+    emailContent->setAcceptRichText(true);
+    emailContent->setAutoFormatting(QTextEdit::AutoAll);
+    
+    // Add HTML/Text mode toggle
+    QHBoxLayout *editorControls = new QHBoxLayout();
+    QPushButton *htmlModeButton = new QPushButton("HTML Mode");
+    QPushButton *textModeButton = new QPushButton("Text Mode");
+    QPushButton *previewButton = new QPushButton("Preview");
+    
+    htmlModeButton->setCheckable(true);
+    textModeButton->setCheckable(true);
+    textModeButton->setChecked(true);
+    
+    connect(htmlModeButton, &QPushButton::clicked, [this, htmlModeButton, textModeButton]() {
+        htmlModeButton->setChecked(true);
+        textModeButton->setChecked(false);
+        emailContent->setPlainText(emailContent->toHtml());
+    });
+    
+    connect(textModeButton, &QPushButton::clicked, [this, htmlModeButton, textModeButton]() {
+        htmlModeButton->setChecked(false);
+        textModeButton->setChecked(true);
+        // Convert HTML to plain text if needed
+    });
+    
+    connect(previewButton, &QPushButton::clicked, [this]() {
+        // Show HTML preview in a dialog
+        QDialog *previewDialog = new QDialog(this);
+        previewDialog->setWindowTitle("Email Preview");
+        previewDialog->resize(600, 400);
+        
+        QVBoxLayout *layout = new QVBoxLayout(previewDialog);
+        QTextEdit *previewEdit = new QTextEdit();
+        previewEdit->setReadOnly(true);
+        previewEdit->setHtml(emailContent->toHtml());
+        layout->addWidget(previewEdit);
+        
+        QPushButton *closeButton = new QPushButton("Close");
+        connect(closeButton, &QPushButton::clicked, previewDialog, &QDialog::accept);
+        layout->addWidget(closeButton);
+        
+        previewDialog->exec();
+        previewDialog->deleteLater();
+    });
+    
+    editorControls->addWidget(htmlModeButton);
+    editorControls->addWidget(textModeButton);
+    editorControls->addWidget(previewButton);
+    editorControls->addStretch();
+    
+    contentLayout->addLayout(editorControls);
     contentLayout->addWidget(emailContent);
     
     emailLayout->addWidget(contentGroup);
@@ -296,11 +350,171 @@ void MainWindow::sendBulkEmails()
         return;
     }
     
-    // TODO: Implement email sending logic
-    showSuccess("Success", "Bulk email sending started. Check the progress bar for updates.");
+    // Validate SMTP settings
+    if (smtpServer->text().isEmpty()) {
+        showError("Error", "Please enter SMTP server.");
+        return;
+    }
+    
+    if (smtpPort->text().isEmpty()) {
+        showError("Error", "Please enter SMTP port.");
+        return;
+    }
+    
+    if (senderEmail->text().isEmpty()) {
+        showError("Error", "Please enter sender email.");
+        return;
+    }
+    
+    // Configure SMTP
+    SmtpConfiguration config;
+    config.server = smtpServer->text();
+    config.port = smtpPort->text().toInt();
+    config.username = smtpUsername->text();
+    config.password = smtpPassword->text();
+    config.encryption = SmtpEncryption::TLS; // Default to TLS
+    config.authMethod = config.username.isEmpty() ? SmtpAuthMethod::None : SmtpAuthMethod::Login;
+    config.timeout = 30;
+    
+    smtpSender->setConfiguration(config);
+    
+    // Test connection first
+    if (!smtpSender->testConnection()) {
+        showError("SMTP Error", QString("Failed to connect to SMTP server:\n%1").arg(smtpSender->getLastError()));
+        return;
+    }
+    
+    // Prepare emails
+    QList<EmailMessage> emailMessages;
+    QString senderEmailAddr = senderEmail->text();
+    QString senderNameText = senderName->text();
+    QString subject = subjectLine->text();
+    
+    // Get template content if selected
+    QString htmlContent;
+    QString textContent = emailContent->toPlainText();
+    
+    // Check if we have an HTML template selected
+    QString templateName = templateCombo->currentText();
+    if (templateName != "None" && templateManager) {
+        EmailTemplate tmpl = templateManager->getTemplate(templateName);
+        if (!tmpl.getName().isEmpty()) {
+            // Use template content
+            htmlContent = tmpl.getHtmlContent();
+            textContent = tmpl.getTextContent();
+            
+            // Apply basic variable substitution for each recipient
+            for (int row = 0; row < emailTable->rowCount(); ++row) {
+                QTableWidgetItem *emailItem = emailTable->item(row, 0);
+                QTableWidgetItem *nameItem = emailTable->item(row, 1);
+                
+                if (emailItem && !emailItem->text().isEmpty()) {
+                    QString recipientEmail = emailItem->text().trimmed();
+                    QString recipientName = nameItem ? nameItem->text().trimmed() : recipientEmail;
+                    
+                    // Create personalized content
+                    QString personalizedHtml = htmlContent;
+                    QString personalizedText = textContent;
+                    
+                    // Replace common variables
+                    personalizedHtml.replace("{{name}}", recipientName, Qt::CaseInsensitive);
+                    personalizedHtml.replace("{{email}}", recipientEmail, Qt::CaseInsensitive);
+                    personalizedText.replace("{{name}}", recipientName, Qt::CaseInsensitive);
+                    personalizedText.replace("{{email}}", recipientEmail, Qt::CaseInsensitive);
+                    
+                    EmailMessage message;
+                    message.from = senderEmailAddr;
+                    message.fromName = senderNameText;
+                    message.to = recipientEmail;
+                    message.toName = recipientName;
+                    message.subject = subject;
+                    message.htmlBody = personalizedHtml;
+                    message.textBody = personalizedText;
+                    message.timestamp = QDateTime::currentDateTime();
+                    message.messageId = QString::number(row);
+                    
+                    emailMessages.append(message);
+                }
+            }
+        }
+    }
+    
+    // If no template, use plain text
+    if (emailMessages.isEmpty()) {
+        for (int row = 0; row < emailTable->rowCount(); ++row) {
+            QTableWidgetItem *emailItem = emailTable->item(row, 0);
+            QTableWidgetItem *nameItem = emailTable->item(row, 1);
+            
+            if (emailItem && !emailItem->text().isEmpty()) {
+                QString recipientEmail = emailItem->text().trimmed();
+                QString recipientName = nameItem ? nameItem->text().trimmed() : recipientEmail;
+                
+                EmailMessage message;
+                message.from = senderEmailAddr;
+                message.fromName = senderNameText;
+                message.to = recipientEmail;
+                message.toName = recipientName;
+                message.subject = subject;
+                message.textBody = textContent;
+                message.timestamp = QDateTime::currentDateTime();
+                message.messageId = QString::number(row);
+                
+                emailMessages.append(message);
+            }
+        }
+    }
+    
+    // Setup progress tracking
     progressBar->setVisible(true);
-    progressBar->setRange(0, emailTable->rowCount());
+    progressBar->setRange(0, emailMessages.size());
     progressBar->setValue(0);
+    
+    // Connect signals for progress tracking
+    connect(smtpSender, &SmtpEmailSender::emailSent, this, [this](const QString &messageId, const QString &recipient) {
+        int row = messageId.toInt();
+        if (row >= 0 && row < emailTable->rowCount()) {
+            QTableWidgetItem *statusItem = emailTable->item(row, 2);
+            if (statusItem) {
+                statusItem->setText("Sent");
+                statusItem->setBackground(QColor(144, 238, 144)); // Light green
+            }
+        }
+        progressBar->setValue(progressBar->value() + 1);
+        updateStatusBar(QString("Sent email to %1").arg(recipient));
+    });
+    
+    connect(smtpSender, &SmtpEmailSender::emailFailed, this, [this](const QString &messageId, const QString &recipient, const QString &error) {
+        int row = messageId.toInt();
+        if (row >= 0 && row < emailTable->rowCount()) {
+            QTableWidgetItem *statusItem = emailTable->item(row, 2);
+            QTableWidgetItem *notesItem = emailTable->item(row, 3);
+            if (statusItem) {
+                statusItem->setText("Failed");
+                statusItem->setBackground(QColor(255, 182, 193)); // Light red
+            }
+            if (notesItem) {
+                notesItem->setText(error);
+            }
+        }
+        progressBar->setValue(progressBar->value() + 1);
+        updateStatusBar(QString("Failed to send email to %1: %2").arg(recipient, error));
+    });
+    
+    connect(smtpSender, &SmtpEmailSender::queueCompleted, this, [this](int sent, int failed) {
+        progressBar->setVisible(false);
+        updateStatusBar(QString("Bulk email sending completed: %1 sent, %2 failed").arg(sent).arg(failed));
+        showSuccess("Email Campaign Complete", 
+                   QString("Email campaign completed:\n• Emails sent: %1\n• Failed: %2").arg(sent).arg(failed));
+        
+        // Disconnect temporary signals
+        disconnect(smtpSender, &SmtpEmailSender::emailSent, this, nullptr);
+        disconnect(smtpSender, &SmtpEmailSender::emailFailed, this, nullptr);
+        disconnect(smtpSender, &SmtpEmailSender::queueCompleted, this, nullptr);
+    });
+    
+    // Start sending
+    smtpSender->sendEmails(emailMessages);
+    updateStatusBar("Starting bulk email sending...");
 }
 
 void MainWindow::loadEmailList()
@@ -349,10 +563,46 @@ void MainWindow::loadEmailList()
 
 void MainWindow::saveEmailList()
 {
-    QString fileName = QFileDialog::getSaveFileName(this, "Save Email List", "", "CSV Files (*.csv);;All Files (*)");
+    if (emailTable->rowCount() == 0) {
+        showError("Export Error", "No emails to export. Please add some emails first.");
+        return;
+    }
+    
+    QString fileName = QFileDialog::getSaveFileName(this, "Save Email List", "", "CSV Files (*.csv);;Excel Files (*.xlsx);;All Files (*)");
     if (!fileName.isEmpty()) {
-        // TODO: Implement saving logic
-        updateStatusBar("Email list saved to " + fileName);
+        try {
+            CsvData data;
+            data.headers = {"Email", "Name", "Status", "Notes"};
+            
+            // Collect data from table
+            for (int row = 0; row < emailTable->rowCount(); ++row) {
+                QStringList rowData;
+                for (int col = 0; col < emailTable->columnCount(); ++col) {
+                    QTableWidgetItem *item = emailTable->item(row, col);
+                    rowData << (item ? item->text() : "");
+                }
+                data.data.append(rowData);
+            }
+            
+            bool success = false;
+            if (fileName.endsWith(".xlsx", Qt::CaseInsensitive)) {
+                success = csvReader->writeExcel(fileName, data);
+            } else {
+                success = csvReader->writeCsv(fileName, data);
+            }
+            
+            if (success) {
+                updateStatusBar(QString("Successfully saved %1 emails to %2")
+                               .arg(emailTable->rowCount()).arg(QFileInfo(fileName).fileName()));
+                showSuccess("Export Successful", 
+                           QString("Saved %1 emails to %2").arg(emailTable->rowCount()).arg(QFileInfo(fileName).fileName()));
+            } else {
+                showError("Export Failed", QString("Failed to save emails to %1:\n%2")
+                         .arg(QFileInfo(fileName).fileName(), csvReader->getLastError()));
+            }
+        } catch (const std::exception &e) {
+            showError("Export Error", QString("An error occurred while exporting: %1").arg(e.what()));
+        }
     }
 }
 
@@ -382,7 +632,27 @@ void MainWindow::clearEmails()
 
 void MainWindow::updateEmailStatus()
 {
-    // TODO: Implement status update logic
+    if (emailTable->rowCount() == 0) {
+        return;
+    }
+    
+    // Update status based on current time and random simulation
+    int pendingCount = 0;
+    int sentCount = 0;
+    int failedCount = 0;
+    
+    for (int row = 0; row < emailTable->rowCount(); ++row) {
+        QTableWidgetItem *statusItem = emailTable->item(row, 2);
+        if (statusItem) {
+            QString status = statusItem->text();
+            if (status == "Pending") pendingCount++;
+            else if (status == "Sent") sentCount++;
+            else if (status == "Failed") failedCount++;
+        }
+    }
+    
+    updateStatusBar(QString("Email Status - Pending: %1, Sent: %2, Failed: %3")
+                   .arg(pendingCount).arg(sentCount).arg(failedCount));
 }
 
 void MainWindow::showCampaignHistory()
@@ -393,46 +663,257 @@ void MainWindow::showCampaignHistory()
 
 void MainWindow::exportResults()
 {
-    QString fileName = QFileDialog::getSaveFileName(this, "Export Results", "", "CSV Files (*.csv);;All Files (*)");
+    if (emailTable->rowCount() == 0) {
+        showError("Export Error", "No results to export. Please add some emails first.");
+        return;
+    }
+    
+    QString fileName = QFileDialog::getSaveFileName(this, "Export Results", "", "CSV Files (*.csv);;Excel Files (*.xlsx);;All Files (*)");
     if (!fileName.isEmpty()) {
-        // TODO: Implement export logic
-        updateStatusBar("Results exported to " + fileName);
+        try {
+            CsvData data;
+            data.headers = {"Email", "Name", "Status", "Notes"};
+            
+            // Collect results from table
+            for (int row = 0; row < emailTable->rowCount(); ++row) {
+                QStringList rowData;
+                for (int col = 0; col < emailTable->columnCount(); ++col) {
+                    QTableWidgetItem *item = emailTable->item(row, col);
+                    rowData << (item ? item->text() : "");
+                }
+                data.data.append(rowData);
+            }
+            
+            bool success = false;
+            if (fileName.endsWith(".xlsx", Qt::CaseInsensitive)) {
+                success = csvReader->writeExcel(fileName, data);
+            } else {
+                success = csvReader->writeCsv(fileName, data);
+            }
+            
+            if (success) {
+                updateStatusBar(QString("Successfully exported results to %1")
+                               .arg(QFileInfo(fileName).fileName()));
+                showSuccess("Export Successful", 
+                           QString("Exported results to %1").arg(QFileInfo(fileName).fileName()));
+            } else {
+                showError("Export Failed", QString("Failed to export results to %1:\n%2")
+                         .arg(QFileInfo(fileName).fileName(), csvReader->getLastError()));
+            }
+        } catch (const std::exception &e) {
+            showError("Export Error", QString("An error occurred while exporting: %1").arg(e.what()));
+        }
     }
 }
 
 void MainWindow::importEmails()
 {
-    QString fileName = QFileDialog::getOpenFileName(this, "Import Emails", "", "CSV Files (*.csv);;All Files (*)");
+    QString fileName = QFileDialog::getOpenFileName(this, "Import Emails", "", "CSV Files (*.csv);;Excel Files (*.xlsx);;All Files (*)");
     if (!fileName.isEmpty()) {
-        // TODO: Implement import logic
-        updateStatusBar("Emails imported from " + fileName);
+        try {
+            CsvData data;
+            bool success = false;
+            
+            if (fileName.endsWith(".xlsx", Qt::CaseInsensitive)) {
+                success = csvReader->readExcel(fileName, data);
+            } else {
+                success = csvReader->readCsv(fileName, data);
+            }
+            
+            if (success) {
+                // Add imported data to existing table (append mode)
+                int importedCount = 0;
+                for (const auto &row : data.data) {
+                    if (row.size() >= 1 && !row[0].isEmpty()) { // At least email address
+                        int tableRow = emailTable->rowCount();
+                        emailTable->insertRow(tableRow);
+                        emailTable->setItem(tableRow, 0, new QTableWidgetItem(row[0])); // Email
+                        emailTable->setItem(tableRow, 1, new QTableWidgetItem(row.size() > 1 ? row[1] : "")); // Name
+                        emailTable->setItem(tableRow, 2, new QTableWidgetItem("Pending")); // Status
+                        emailTable->setItem(tableRow, 3, new QTableWidgetItem("")); // Notes
+                        importedCount++;
+                    }
+                }
+                
+                updateStatusBar(QString("Successfully imported %1 emails from %2")
+                               .arg(importedCount).arg(QFileInfo(fileName).fileName()));
+                showSuccess("Import Successful", 
+                           QString("Imported %1 emails from %2").arg(importedCount).arg(QFileInfo(fileName).fileName()));
+            } else {
+                showError("Import Failed", QString("Failed to import emails from %1:\n%2")
+                         .arg(QFileInfo(fileName).fileName(), csvReader->getLastError()));
+            }
+        } catch (const std::exception &e) {
+            showError("Import Error", QString("An error occurred while importing: %1").arg(e.what()));
+        }
     }
 }
 
 void MainWindow::validateEmails()
 {
-    // TODO: Implement email validation logic
-    showSuccess("Validation", "Email validation completed.");
+    if (emailTable->rowCount() == 0) {
+        showError("Validation Error", "No emails to validate. Please add some emails first.");
+        return;
+    }
+    
+    int validCount = 0;
+    int invalidCount = 0;
+    
+    // Simple email validation using regex
+    QRegularExpression emailRegex("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
+    
+    for (int row = 0; row < emailTable->rowCount(); ++row) {
+        QTableWidgetItem *emailItem = emailTable->item(row, 0);
+        if (emailItem) {
+            QString email = emailItem->text().trimmed();
+            QTableWidgetItem *statusItem = emailTable->item(row, 2);
+            
+            if (emailRegex.match(email).hasMatch()) {
+                validCount++;
+                if (statusItem) {
+                    statusItem->setText("Valid");
+                    statusItem->setBackground(QColor(144, 238, 144)); // Light green
+                }
+            } else {
+                invalidCount++;
+                if (statusItem) {
+                    statusItem->setText("Invalid");
+                    statusItem->setBackground(QColor(255, 182, 193)); // Light red
+                }
+                
+                QTableWidgetItem *notesItem = emailTable->item(row, 3);
+                if (notesItem) {
+                    notesItem->setText("Invalid email format");
+                }
+            }
+        }
+    }
+    
+    updateStatusBar(QString("Email validation completed: %1 valid, %2 invalid")
+                   .arg(validCount).arg(invalidCount));
+    showSuccess("Validation Complete", 
+               QString("Validation completed:\n• Valid emails: %1\n• Invalid emails: %2")
+               .arg(validCount).arg(invalidCount));
 }
 
 void MainWindow::cleanData()
 {
-    // TODO: Implement data cleaning logic
-    showSuccess("Data Cleaning", "Data cleaning completed.");
+    if (emailTable->rowCount() == 0) {
+        showError("Cleaning Error", "No data to clean. Please add some emails first.");
+        return;
+    }
+    
+    int originalCount = emailTable->rowCount();
+    int removedCount = 0;
+    int cleanedCount = 0;
+    
+    // Remove rows from bottom to top to avoid index issues
+    for (int row = emailTable->rowCount() - 1; row >= 0; --row) {
+        QTableWidgetItem *emailItem = emailTable->item(row, 0);
+        QTableWidgetItem *nameItem = emailTable->item(row, 1);
+        
+        if (emailItem) {
+            QString email = emailItem->text().trimmed();
+            
+            // Remove empty emails
+            if (email.isEmpty()) {
+                emailTable->removeRow(row);
+                removedCount++;
+                continue;
+            }
+            
+            // Clean and normalize email
+            email = email.toLower();
+            emailItem->setText(email);
+            cleanedCount++;
+            
+            // Clean name field
+            if (nameItem) {
+                QString name = nameItem->text().trimmed();
+                // Capitalize first letter of each word
+                QStringList nameParts = name.split(' ', Qt::SkipEmptyParts);
+                for (QString &part : nameParts) {
+                    if (!part.isEmpty()) {
+                        part[0] = part[0].toUpper();
+                    }
+                }
+                nameItem->setText(nameParts.join(' '));
+            }
+        } else {
+            emailTable->removeRow(row);
+            removedCount++;
+        }
+    }
+    
+    // Remove duplicates
+    QSet<QString> seenEmails;
+    int duplicatesRemoved = 0;
+    
+    for (int row = emailTable->rowCount() - 1; row >= 0; --row) {
+        QTableWidgetItem *emailItem = emailTable->item(row, 0);
+        if (emailItem) {
+            QString email = emailItem->text().trimmed().toLower();
+            if (seenEmails.contains(email)) {
+                emailTable->removeRow(row);
+                duplicatesRemoved++;
+            } else {
+                seenEmails.insert(email);
+            }
+        }
+    }
+    
+    updateStatusBar(QString("Data cleaning completed: %1 cleaned, %2 removed, %3 duplicates removed")
+                   .arg(cleanedCount).arg(removedCount).arg(duplicatesRemoved));
+    showSuccess("Data Cleaning Complete", 
+               QString("Data cleaning completed:\n• Original count: %1\n• Cleaned emails: %2\n• Empty rows removed: %3\n• Duplicates removed: %4\n• Final count: %5")
+               .arg(originalCount).arg(cleanedCount).arg(removedCount).arg(duplicatesRemoved).arg(emailTable->rowCount()));
 }
 
 void MainWindow::loadCampaignHistory()
 {
-    // TODO: Implement campaign history loading
     campaignTable->setRowCount(0);
-    // Add sample data for now
-    int row = campaignTable->rowCount();
-    campaignTable->insertRow(row);
-    campaignTable->setItem(row, 0, new QTableWidgetItem("CAMP001"));
-    campaignTable->setItem(row, 1, new QTableWidgetItem("Welcome Email"));
-    campaignTable->setItem(row, 2, new QTableWidgetItem("2024-01-15"));
-    campaignTable->setItem(row, 3, new QTableWidgetItem("150"));
-    campaignTable->setItem(row, 4, new QTableWidgetItem("Completed"));
+    
+    // Load from database if available, otherwise show sample data
+    if (database && database->isConnected()) {
+        // TODO: Load real campaign data from database
+        // For now, add sample data
+    }
+    
+    // Add sample campaign history
+    struct CampaignInfo {
+        QString id;
+        QString name;
+        QString date;
+        QString count;
+        QString status;
+    };
+    
+    QList<CampaignInfo> sampleCampaigns = {
+        {"CAMP001", "Welcome Email", "2024-12-01", "150", "Completed"},
+        {"CAMP002", "Product Launch", "2024-12-02", "200", "Completed"},
+        {"CAMP003", "Newsletter #1", "2024-12-03", "180", "Completed"},
+        {"CAMP004", "Holiday Promo", "2024-12-04", "250", "In Progress"}
+    };
+    
+    for (const auto &campaign : sampleCampaigns) {
+        int row = campaignTable->rowCount();
+        campaignTable->insertRow(row);
+        campaignTable->setItem(row, 0, new QTableWidgetItem(campaign.id));
+        campaignTable->setItem(row, 1, new QTableWidgetItem(campaign.name));
+        campaignTable->setItem(row, 2, new QTableWidgetItem(campaign.date));
+        campaignTable->setItem(row, 3, new QTableWidgetItem(campaign.count));
+        campaignTable->setItem(row, 4, new QTableWidgetItem(campaign.status));
+        
+        // Color code status
+        QTableWidgetItem *statusItem = campaignTable->item(row, 4);
+        if (campaign.status == "Completed") {
+            statusItem->setBackground(QColor(144, 238, 144)); // Light green
+        } else if (campaign.status == "In Progress") {
+            statusItem->setBackground(QColor(255, 255, 224)); // Light yellow
+        } else if (campaign.status == "Failed") {
+            statusItem->setBackground(QColor(255, 182, 193)); // Light red
+        }
+    }
 }
 
 void MainWindow::updateStatusBar(const QString &message)
