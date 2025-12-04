@@ -547,27 +547,6 @@ void MainWindow::sendBulkEmails()
     if (emailMessages.isEmpty()) {
         showError("Error", "No valid email addresses found.");
         return;
-        for (int row = 0; row < emailTable->rowCount(); ++row) {
-            QTableWidgetItem *emailItem = emailTable->item(row, 0);
-            QTableWidgetItem *nameItem = emailTable->item(row, 1);
-            
-            if (emailItem && !emailItem->text().isEmpty()) {
-                QString recipientEmail = emailItem->text().trimmed();
-                QString recipientName = nameItem ? nameItem->text().trimmed() : recipientEmail;
-                
-                EmailMessage message;
-                message.from = senderEmailAddr;
-                message.fromName = senderNameText;
-                message.to = recipientEmail;
-                message.toName = recipientName;
-                message.subject = subject;
-                message.textBody = textContent;
-                message.timestamp = QDateTime::currentDateTime();
-                message.messageId = QString::number(row);
-                
-                emailMessages.append(message);
-            }
-        }
     }
     
     // Setup progress tracking
