@@ -397,11 +397,11 @@ void MainWindow::sendBulkEmails()
     // Check if we have an HTML template selected
     QString templateName = templateCombo->currentText();
     if (templateName != "None" && templateManager) {
-        EmailTemplate tmpl = templateManager->getTemplate(templateName);
-        if (!tmpl.getName().isEmpty()) {
+        EmailTemplate* tmpl = templateManager->getTemplate(templateName);
+        if (!tmpl->getName().isEmpty()) {
             // Use template content
-            htmlContent = tmpl.getHtmlContent();
-            textContent = tmpl.getTextContent();
+            htmlContent = tmpl->getHtmlContent();
+            textContent = tmpl->getTextContent();
             
             // Apply basic variable substitution for each recipient
             for (int row = 0; row < emailTable->rowCount(); ++row) {
@@ -522,13 +522,12 @@ void MainWindow::loadEmailList()
     QString fileName = QFileDialog::getOpenFileName(this, "Load Email List", "", "CSV Files (*.csv);;Excel Files (*.xlsx);;All Files (*)");
     if (!fileName.isEmpty()) {
         try {
-            CsvData data;
             bool success = false;
             
             if (fileName.endsWith(".xlsx", Qt::CaseInsensitive)) {
-                success = csvReader->readExcel(fileName, data);
+                success = csvReader->loadFromExcel(fileName);
             } else {
-                success = csvReader->readCsv(fileName, data);
+                success = csvReader->loadFromCsv(fileName);
             }
             
             if (success) {
@@ -536,24 +535,25 @@ void MainWindow::loadEmailList()
                 emailTable->setRowCount(0);
                 
                 // Add imported data to table
-                for (const auto &row : data.data) {
-                    if (row.size() >= 2) { // At least email and name
+                QList<ContactData> contacts = csvReader->getContacts();
+                for (const auto &contact : contacts) {
+                    if (!contact.email.isEmpty()) {
                         int tableRow = emailTable->rowCount();
                         emailTable->insertRow(tableRow);
-                        emailTable->setItem(tableRow, 0, new QTableWidgetItem(row[0])); // Email
-                        emailTable->setItem(tableRow, 1, new QTableWidgetItem(row.size() > 1 ? row[1] : "")); // Name
-                        emailTable->setItem(tableRow, 2, new QTableWidgetItem("Pending")); // Status
-                        emailTable->setItem(tableRow, 3, new QTableWidgetItem("")); // Notes
+                        emailTable->setItem(tableRow, 0, new QTableWidgetItem(contact.email));
+                        emailTable->setItem(tableRow, 1, new QTableWidgetItem(contact.getDisplayName()));
+                        emailTable->setItem(tableRow, 2, new QTableWidgetItem("Pending"));
+                        emailTable->setItem(tableRow, 3, new QTableWidgetItem(""));
                     }
                 }
                 
                 updateStatusBar(QString("Successfully loaded %1 emails from %2")
-                               .arg(data.data.size()).arg(QFileInfo(fileName).fileName()));
+                               .arg(contacts.size()).arg(QFileInfo(fileName).fileName()));
                 showSuccess("Import Successful", 
-                           QString("Imported %1 emails from %2").arg(data.data.size()).arg(QFileInfo(fileName).fileName()));
+                           QString("Imported %1 emails from %2").arg(contacts.size()).arg(QFileInfo(fileName).fileName()));
             } else {
-                showError("Import Failed", QString("Failed to import emails from %1:\n%2")
-                         .arg(QFileInfo(fileName).fileName(), csvReader->getLastError()));
+                showError("Import Failed", QString("Failed to import emails from %1")
+                         .arg(QFileInfo(fileName).fileName()));
             }
         } catch (const std::exception &e) {
             showError("Import Error", QString("An error occurred while importing: %1").arg(e.what()));
