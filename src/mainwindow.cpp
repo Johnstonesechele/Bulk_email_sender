@@ -149,40 +149,107 @@ void MainWindow::setupEmailTab()
     // Add HTML/Text mode toggle
     QHBoxLayout *editorControls = new QHBoxLayout();
     QPushButton *htmlModeButton = new QPushButton("HTML Mode");
-    QPushButton *textModeButton = new QPushButton("Text Mode");
+    QPushButton *textModeButton = new QPushButton("Rich Text Mode");
     QPushButton *previewButton = new QPushButton("Preview");
     
     htmlModeButton->setCheckable(true);
     textModeButton->setCheckable(true);
     textModeButton->setChecked(true);
     
-    connect(htmlModeButton, &QPushButton::clicked, [this, htmlModeButton, textModeButton]() {
+    // Store the current editing mode
+    bool isHtmlMode = false;
+    
+    connect(htmlModeButton, &QPushButton::clicked, [this, htmlModeButton, textModeButton, &isHtmlMode]() {
         htmlModeButton->setChecked(true);
         textModeButton->setChecked(false);
-        emailContent->setPlainText(emailContent->toHtml());
+        isHtmlMode = true;
+        
+        // Switch to HTML source editing mode
+        QString currentHtml = emailContent->toHtml();
+        emailContent->clear();
+        emailContent->setPlainText(currentHtml);
+        emailContent->setPlaceholderText("Enter HTML code here...\n\nExample:\n<h1>Welcome!</h1>\n<p>Hello {{name}},</p>\n<p>Thank you for joining us!</p>");
     });
     
-    connect(textModeButton, &QPushButton::clicked, [this, htmlModeButton, textModeButton]() {
+    connect(textModeButton, &QPushButton::clicked, [this, htmlModeButton, textModeButton, &isHtmlMode]() {
         htmlModeButton->setChecked(false);
         textModeButton->setChecked(true);
-        // Convert HTML to plain text if needed
+        isHtmlMode = false;
+        
+        // Switch back to rich text editing mode
+        if (!emailContent->toPlainText().isEmpty()) {
+            QString htmlContent = emailContent->toPlainText();
+            emailContent->clear();
+            emailContent->setHtml(htmlContent);
+        }
+        emailContent->setPlaceholderText("Enter your email message here...\nYou can use formatting buttons or type HTML tags.");
     });
     
     connect(previewButton, &QPushButton::clicked, [this]() {
         // Show HTML preview in a dialog
         QDialog *previewDialog = new QDialog(this);
         previewDialog->setWindowTitle("Email Preview");
-        previewDialog->resize(600, 400);
+        previewDialog->resize(800, 600);
         
         QVBoxLayout *layout = new QVBoxLayout(previewDialog);
+        
+        // Add subject preview
+        QLabel *subjectLabel = new QLabel(QString("<b>Subject:</b> %1").arg(subjectLine->text()));
+        layout->addWidget(subjectLabel);
+        
+        // Create preview area with proper HTML rendering
         QTextEdit *previewEdit = new QTextEdit();
         previewEdit->setReadOnly(true);
-        previewEdit->setHtml(emailContent->toHtml());
+        
+        // Get the content - check if it's HTML or plain text
+        QString content = emailContent->toPlainText();
+        
+        // Check if we have a template selected
+        QString templateName = templateCombo->currentText();
+        if (templateName != "None" && templateManager) {
+            EmailTemplate* tmpl = templateManager->getTemplate(templateName);
+            if (tmpl && !tmpl->getName().isEmpty()) {
+                content = tmpl->getHtmlContent();
+                
+                // Apply sample variable substitution for preview
+                content.replace("{{name}}", "John Doe", Qt::CaseInsensitive);
+                content.replace("{{email}}", "john.doe@example.com", Qt::CaseInsensitive);
+                content.replace("{{company}}", "Example Company", Qt::CaseInsensitive);
+                content.replace("{{subject}}", subjectLine->text(), Qt::CaseInsensitive);
+            }
+        }
+        
+        // If content looks like HTML (contains HTML tags), render it as HTML
+        if (content.contains("<html>", Qt::CaseInsensitive) || 
+            content.contains("<body>", Qt::CaseInsensitive) || 
+            content.contains("<div>", Qt::CaseInsensitive) ||
+            content.contains("<p>", Qt::CaseInsensitive) ||
+            content.contains("<br>", Qt::CaseInsensitive)) {
+            previewEdit->setHtml(content);
+        } else {
+            // Plain text content - convert newlines to HTML
+            QString htmlContent = content.replace("\n", "<br>");
+            previewEdit->setHtml(QString("<html><body><p>%1</p></body></html>").arg(htmlContent));
+        }
+        
         layout->addWidget(previewEdit);
         
+        // Add control buttons
+        QHBoxLayout *buttonLayout = new QHBoxLayout();
         QPushButton *closeButton = new QPushButton("Close");
+        QPushButton *sendTestButton = new QPushButton("Send Test Email");
+        
         connect(closeButton, &QPushButton::clicked, previewDialog, &QDialog::accept);
-        layout->addWidget(closeButton);
+        connect(sendTestButton, &QPushButton::clicked, [this, previewDialog]() {
+            previewDialog->accept();
+            // TODO: Implement test email sending
+            showSuccess("Test Email", "Test email functionality not yet implemented.");
+        });
+        
+        buttonLayout->addWidget(sendTestButton);
+        buttonLayout->addStretch();
+        buttonLayout->addWidget(closeButton);
+        layout->addLayout(buttonLayout);
         
         previewDialog->exec();
         previewDialog->deleteLater();
