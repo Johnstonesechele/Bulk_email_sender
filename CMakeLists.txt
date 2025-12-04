@@ -51,6 +51,7 @@ set(HEADERS
     src/contactlistmanager.h
     src/appsettings.h
     src/settingsdialog.h
+    src/analyticsdashboard.h
 )
 
 set(UI_FILES
@@ -66,6 +67,7 @@ target_link_libraries(BulkEmailApp
     Qt6::Widgets 
     Qt6::Network 
     Qt6::Sql
+    Qt6::Charts
 )
 
 # Include directories
