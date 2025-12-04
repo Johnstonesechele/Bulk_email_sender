@@ -457,18 +457,58 @@ void MainWindow::sendBulkEmails()
     QString senderNameText = senderName->text();
     QString subject = subjectLine->text();
     
-    // Get template content if selected
+    // Get content - check if it's HTML or plain text
     QString htmlContent;
-    QString textContent = emailContent->toPlainText();
+    QString textContent;
+    
+    // Get the content from the editor
+    QString editorContent = emailContent->toPlainText();
     
     // Check if we have an HTML template selected
     QString templateName = templateCombo->currentText();
     if (templateName != "None" && templateManager) {
         EmailTemplate* tmpl = templateManager->getTemplate(templateName);
-        if (!tmpl->getName().isEmpty()) {
+        if (tmpl && !tmpl->getName().isEmpty()) {
             // Use template content
             htmlContent = tmpl->getHtmlContent();
-            textContent = tmpl->getTextContent();
+            textContent = tmpl->getTextContent().isEmpty() ? editorContent : tmpl->getTextContent();
+        } else {
+            // No valid template, use editor content
+            if (editorContent.contains("<html>", Qt::CaseInsensitive) || 
+                editorContent.contains("<body>", Qt::CaseInsensitive) || 
+                editorContent.contains("<div>", Qt::CaseInsensitive) ||
+                editorContent.contains("<p>", Qt::CaseInsensitive) ||
+                editorContent.contains("<br>", Qt::CaseInsensitive)) {
+                // Editor contains HTML
+                htmlContent = editorContent;
+                textContent = emailContent->toPlainText(); // Convert HTML to plain text
+            } else {
+                // Plain text content
+                textContent = editorContent;
+                htmlContent = QString("<html><body><p>%1</p></body></html>")
+                             .arg(editorContent.replace("\n", "<br>"));
+            }
+        }
+    } else {
+        // No template selected, use editor content
+        if (editorContent.contains("<html>", Qt::CaseInsensitive) || 
+            editorContent.contains("<body>", Qt::CaseInsensitive) || 
+            editorContent.contains("<div>", Qt::CaseInsensitive) ||
+            editorContent.contains("<p>", Qt::CaseInsensitive) ||
+            editorContent.contains("<br>", Qt::CaseInsensitive)) {
+            // Editor contains HTML
+            htmlContent = editorContent;
+            // Create a temporary QTextEdit to convert HTML to plain text
+            QTextEdit tempEdit;
+            tempEdit.setHtml(editorContent);
+            textContent = tempEdit.toPlainText();
+        } else {
+            // Plain text content
+            textContent = editorContent;
+            htmlContent = QString("<html><body><p>%1</p></body></html>")
+                         .arg(editorContent.replace("\n", "<br>"));
+        }
+    }
             
             // Apply basic variable substitution for each recipient
             for (int row = 0; row < emailTable->rowCount(); ++row) {
