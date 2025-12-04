@@ -5,7 +5,7 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Find Qt6 components
-find_package(Qt6 REQUIRED COMPONENTS Core Widgets Network Sql)
+find_package(Qt6 REQUIRED COMPONENTS Core Widgets Network Sql Charts)
 
 # Set up Qt6
 set(CMAKE_AUTOMOC ON)
@@ -26,6 +26,12 @@ set(SOURCES
     src/htmlemailbuilder.cpp
     src/csvreader.cpp
     src/smtpemailsender.cpp
+    src/analytics.cpp
+    src/logger.cpp
+    src/contactlistmanager.cpp
+    src/appsettings.cpp
+    src/settingsdialog.cpp
+    src/analyticsdashboard.cpp
 )
 
 set(HEADERS
@@ -40,6 +46,11 @@ set(HEADERS
     src/htmlemailbuilder.h
     src/csvreader.h
     src/smtpemailsender.h
+    src/analytics.h
+    src/logger.h
+    src/contactlistmanager.h
+    src/appsettings.h
+    src/settingsdialog.h
 )
 
 set(UI_FILES

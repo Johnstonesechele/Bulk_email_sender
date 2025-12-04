@@ -8,6 +8,8 @@
 #include <QRegularExpression>
 #include <QFileInfo>
 #include <QDialog>
+#include <QHostInfo>
+#include <QMenu>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -109,6 +111,206 @@ void MainWindow::setupEmailTab()
     smtpPassword = new QLineEdit();
     smtpPassword->setEchoMode(QLineEdit::Password);
     configLayout->addWidget(smtpPassword, 2, 3);
+    
+    // Add encryption options
+    configLayout->addWidget(new QLabel("Encryption:"), 3, 0);
+    encryptionCombo = new QComboBox();
+    encryptionCombo->addItems({"None", "SSL/TLS", "STARTTLS"});
+    encryptionCombo->setCurrentText("STARTTLS");
+    configLayout->addWidget(encryptionCombo, 3, 1);
+    
+    // Store encryption combo for later use
+    connect(encryptionCombo, &QComboBox::currentTextChanged, [this](const QString &encryption) {
+        // Update port based on encryption
+        if (encryption == "SSL/TLS") {
+            smtpPort->setText("465");
+        } else if (encryption == "STARTTLS") {
+            smtpPort->setText("587");
+        } else {
+            smtpPort->setText("25");
+        }
+    });
+    
+    // Add test connection button
+    QPushButton *testConnectionButton = new QPushButton("Test Connection");
+    QPushButton *testNetworkButton = new QPushButton("Test Network");
+    
+    QHBoxLayout *testButtonLayout = new QHBoxLayout();
+    testButtonLayout->addWidget(testConnectionButton);
+    testButtonLayout->addWidget(testNetworkButton);
+    configLayout->addLayout(testButtonLayout, 3, 2, 1, 2);
+    
+    // Add preset configurations
+    QPushButton *presetsButton = new QPushButton("Presets");
+    configLayout->addWidget(presetsButton, 3, 3);
+    
+    connect(presetsButton, &QPushButton::clicked, [this, presetsButton]() {
+        QMenu *presetsMenu = new QMenu(this);
+        
+        // Gmail preset
+        QAction *gmailAction = presetsMenu->addAction("Gmail (smtp.gmail.com:587)");
+        connect(gmailAction, &QAction::triggered, [this]() {
+            smtpServer->setText("smtp.gmail.com");
+            smtpPort->setText("587");
+            encryptionCombo->setCurrentText("STARTTLS");
+        });
+        
+        // Outlook preset
+        QAction *outlookAction = presetsMenu->addAction("Outlook (smtp-mail.outlook.com:587)");
+        connect(outlookAction, &QAction::triggered, [this]() {
+            smtpServer->setText("smtp-mail.outlook.com");
+            smtpPort->setText("587");
+            encryptionCombo->setCurrentText("STARTTLS");
+        });
+        
+        // Yahoo preset
+        QAction *yahooAction = presetsMenu->addAction("Yahoo (smtp.mail.yahoo.com:587)");
+        connect(yahooAction, &QAction::triggered, [this]() {
+            smtpServer->setText("smtp.mail.yahoo.com");
+            smtpPort->setText("587");
+            encryptionCombo->setCurrentText("STARTTLS");
+        });
+        
+        // Testing preset (no encryption)
+        QAction *testAction = presetsMenu->addAction("Test (smtp.gmail.com:25, No encryption)");
+        connect(testAction, &QAction::triggered, [this]() {
+            smtpServer->setText("smtp.gmail.com");
+            smtpPort->setText("25");
+            encryptionCombo->setCurrentText("None");
+        });
+        
+        // Local server preset
+        QAction *localAction = presetsMenu->addAction("Local Server (localhost:25)");
+        connect(localAction, &QAction::triggered, [this]() {
+            smtpServer->setText("localhost");
+            smtpPort->setText("25");
+            encryptionCombo->setCurrentText("None");
+        });
+        
+        presetsMenu->exec(presetsButton->mapToGlobal(QPoint(0, presetsButton->height())));
+        presetsMenu->deleteLater();
+    });
+    
+    connect(testConnectionButton, &QPushButton::clicked, [this]() {
+        // Test SMTP connection
+        if (smtpServer->text().isEmpty()) {
+            showError("Error", "Please enter SMTP server.");
+            return;
+        }
+        
+        // First, test basic network connectivity
+        updateStatusBar("Testing network connectivity...");
+        
+        // Try to resolve the hostname first
+        QHostInfo hostInfo = QHostInfo::fromName(smtpServer->text());
+        if (hostInfo.error() != QHostInfo::NoError) {
+            showError("Network Error", 
+                     QString("Cannot resolve hostname '%1'.\n\nError: %2\n\nPossible solutions:\n"
+                             "• Check your internet connection\n"
+                             "• Verify the SMTP server address is correct\n"
+                             "• Try using an IP address instead\n"
+                             "• Check DNS settings")
+                     .arg(smtpServer->text(), hostInfo.errorString()));
+            updateStatusBar("DNS resolution failed");
+            return;
+        }
+        
+        // Show resolved IP addresses
+        QStringList addresses;
+        for (const QHostAddress &address : hostInfo.addresses()) {
+            addresses << address.toString();
+        }
+        updateStatusBar(QString("Resolved %1 to: %2").arg(smtpServer->text(), addresses.join(", ")));
+        
+        SmtpConfiguration config;
+        config.server = smtpServer->text();
+        config.port = smtpPort->text().toInt();
+        config.username = smtpUsername->text();
+        config.password = smtpPassword->text();
+        config.timeout = 10;
+        
+        QString encryptionType = encryptionCombo->currentText();
+        if (encryptionType == "SSL/TLS") {
+            config.encryption = SmtpEncryption::SSL;
+        } else if (encryptionType == "STARTTLS") {
+            config.encryption = SmtpEncryption::STARTTLS;
+        } else {
+            config.encryption = SmtpEncryption::None;
+        }
+        
+        config.authMethod = config.username.isEmpty() ? SmtpAuthMethod::None : SmtpAuthMethod::Login;
+        
+        smtpSender->setConfiguration(config);
+        
+        updateStatusBar("Testing SMTP connection...");
+        if (smtpSender->testConnection()) {
+            showSuccess("Connection Test", "SMTP connection successful!");
+            updateStatusBar("SMTP connection test successful");
+        } else {
+            QString errorDetails = smtpSender->getLastError();
+            QString suggestions;
+            
+            if (errorDetails.contains("Host not found", Qt::CaseInsensitive)) {
+                suggestions = "\n\nSuggestions:\n"
+                             "• Check internet connection\n"
+                             "• Verify SMTP server address\n"
+                             "• Try smtp.gmail.com, smtp.outlook.com, or smtp.mail.yahoo.com";
+            } else if (errorDetails.contains("Connection refused", Qt::CaseInsensitive)) {
+                suggestions = "\n\nSuggestions:\n"
+                             "• Try different ports (25, 465, 587)\n"
+                             "• Check if firewall is blocking the connection\n"
+                             "• Try different encryption settings";
+            } else if (errorDetails.contains("timeout", Qt::CaseInsensitive)) {
+                suggestions = "\n\nSuggestions:\n"
+                             "• Server may be slow - try again\n"
+                             "• Check if corporate firewall blocks SMTP\n"
+                             "• Try port 25 with no encryption first";
+            }
+            
+            showError("Connection Test Failed", 
+                     QString("Failed to connect to SMTP server:\n\n%1%2")
+                     .arg(errorDetails, suggestions));
+            updateStatusBar("SMTP connection test failed");
+        }
+    });
+    
+    connect(testNetworkButton, &QPushButton::clicked, [this]() {
+        updateStatusBar("Testing network connectivity...");
+        
+        QStringList testHosts = {
+            "google.com",
+            "smtp.gmail.com",
+            "outlook.com",
+            "yahoo.com"
+        };
+        
+        QStringList results;
+        bool anySuccess = false;
+        
+        for (const QString &host : testHosts) {
+            QHostInfo hostInfo = QHostInfo::fromName(host);
+            if (hostInfo.error() == QHostInfo::NoError) {
+                results << QString("✓ %1 - OK").arg(host);
+                anySuccess = true;
+            } else {
+                results << QString("✗ %1 - %2").arg(host, hostInfo.errorString());
+            }
+        }
+        
+        QString title = anySuccess ? "Network Test Results" : "Network Test Failed";
+        QString message = QString("DNS Resolution Test Results:\n\n%1\n\n%2")
+                         .arg(results.join("\n"))
+                         .arg(anySuccess ? "Internet connectivity appears to be working." 
+                                        : "No internet connectivity detected.\nCheck your network connection.");
+        
+        if (anySuccess) {
+            showSuccess(title, message);
+            updateStatusBar("Network connectivity test passed");
+        } else {
+            showError(title, message);
+            updateStatusBar("Network connectivity test failed");
+        }
+    });
     
     emailLayout->addWidget(configGroup);
     
@@ -433,15 +635,25 @@ void MainWindow::sendBulkEmails()
         return;
     }
     
-    // Configure SMTP
+    // Configure SMTP with proper encryption
     SmtpConfiguration config;
     config.server = smtpServer->text();
     config.port = smtpPort->text().toInt();
     config.username = smtpUsername->text();
     config.password = smtpPassword->text();
-    config.encryption = SmtpEncryption::TLS; // Default to TLS
-    config.authMethod = config.username.isEmpty() ? SmtpAuthMethod::None : SmtpAuthMethod::Login;
     config.timeout = 30;
+    
+    // Set encryption based on user selection
+    QString encryptionType = encryptionCombo->currentText();
+    if (encryptionType == "SSL/TLS") {
+        config.encryption = SmtpEncryption::SSL;
+    } else if (encryptionType == "STARTTLS") {
+        config.encryption = SmtpEncryption::STARTTLS;
+    } else {
+        config.encryption = SmtpEncryption::None;
+    }
+    
+    config.authMethod = config.username.isEmpty() ? SmtpAuthMethod::None : SmtpAuthMethod::Login;
     
     smtpSender->setConfiguration(config);
     
@@ -505,10 +717,12 @@ void MainWindow::sendBulkEmails()
         } else {
             // Plain text content
             textContent = editorContent;
+            htmlContent = QString("<html><body><p>%1</p></body></html>")
+                         .arg(editorContent.replace("\n", "<br>"));
+        }
     }
     
     // Create email messages for all recipients
-    QList<EmailMessage> emailMessages;
     for (int row = 0; row < emailTable->rowCount(); ++row) {
         QTableWidgetItem *emailItem = emailTable->item(row, 0);
         QTableWidgetItem *nameItem = emailTable->item(row, 1);

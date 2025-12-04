@@ -87,6 +87,7 @@ private:
     QLineEdit *smtpPort;
     QLineEdit *smtpUsername;
     QLineEdit *smtpPassword;
+    QComboBox *encryptionCombo;
     QPushButton *sendButton;
     QPushButton *loadButton;
     QPushButton *saveButton;
