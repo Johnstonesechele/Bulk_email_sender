@@ -134,10 +134,11 @@ The application features a modern dark theme with:
 - **Network**: Internet connection for email sending
 
 ### Development Requirements
-- **Qt6**: Version 6.2 or later
+- **Qt6**: Version 6.2 or later with Charts module
 - **CMake**: Version 3.16 or later
 - **C++ Compiler**: MSVC 2019 or later, or MinGW-w64
 - **Build Tools**: Visual Studio 2019/2022 or Qt Creator
+- **Additional Qt Modules**: Core, Widgets, Network, Sql, Charts
 
 ## Installation
 
