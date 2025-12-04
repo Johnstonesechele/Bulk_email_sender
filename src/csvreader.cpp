@@ -351,6 +351,17 @@ bool CsvReader::exportToCsv(const QString &filePath, const QList<ContactData> &c
     return true;
 }
 
+bool CsvReader::exportToExcel(const QString &filePath, const QList<ContactData> &contactsToExport)
+{
+    // For now, Excel export is not supported - redirect to CSV
+    lastError = "Excel export is not yet implemented. Please use CSV format instead.";
+    emit errorOccurred(lastError);
+    return false;
+    
+    // TODO: Implement actual Excel export using a library like QXlsx or similar
+    // This would require adding an Excel library dependency to the project
+}
+
 QString CsvReader::cleanEmail(const QString &email)
 {
     return email.toLower().trimmed().remove(QRegularExpression("[\\s\\t\\n\\r]"));
