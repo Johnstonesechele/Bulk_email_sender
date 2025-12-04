@@ -6,6 +6,7 @@
 #include <QDateTime>
 #include <QMap>
 #include <QJsonObject>
+#include "htmlemailbuilder.h"
 
 enum class TemplateType {
     Custom,
@@ -50,9 +51,17 @@ public:
     void setCategory(const QString &category);
     void setTags(const QStringList &tags);
     
-    // Template processing
+    // Template processing with HTML builder
     QString processTemplate(const QMap<QString, QString> &variables) const;
     QString processSubject(const QMap<QString, QString> &variables) const;
+    QString generateFinalHtml(const QMap<QString, QString> &variables) const;
+    QString generatePlainText(const QMap<QString, QString> &variables) const;
+    
+    // HTML email specific methods
+    QString getOptimizedHtml() const;
+    bool isHtmlTemplate() const;
+    QStringList getRequiredImages() const;
+    QStringList validateEmailCompatibility() const;
     QStringList extractVariables() const;
     bool validateTemplate() const;
     
@@ -87,6 +96,9 @@ private:
     TemplateType type;
     QDateTime createdDate;
     QDateTime modifiedDate;
+    
+    // HTML email builder instance
+    mutable HtmlEmailBuilder* htmlBuilder;
     
     void generateId();
     void updateModifiedDate();

@@ -4,24 +4,26 @@
 #include <QJsonArray>
 
 EmailTemplate::EmailTemplate(QObject *parent)
-    : QObject(parent), type(TemplateType::Custom)
+    : QObject(parent), type(TemplateType::Custom), htmlBuilder(nullptr)
 {
     generateId();
     createdDate = QDateTime::currentDateTime();
     modifiedDate = createdDate;
+    htmlBuilder = new HtmlEmailBuilder(this);
 }
 
 EmailTemplate::EmailTemplate(const QString &id, const QString &name, const QString &subject,
                            const QString &htmlContent, const QString &textContent,
                            TemplateType type, QObject *parent)
     : QObject(parent), id(id), name(name), subject(subject), 
-      htmlContent(htmlContent), textContent(textContent), type(type)
+      htmlContent(htmlContent), textContent(textContent), type(type), htmlBuilder(nullptr)
 {
     if (this->id.isEmpty()) {
         generateId();
     }
     createdDate = QDateTime::currentDateTime();
     modifiedDate = createdDate;
+    htmlBuilder = new HtmlEmailBuilder(this);
 }
 
 void EmailTemplate::setName(const QString &name)
