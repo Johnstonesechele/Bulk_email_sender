@@ -720,26 +720,27 @@ void MainWindow::importEmails()
     QString fileName = QFileDialog::getOpenFileName(this, "Import Emails", "", "CSV Files (*.csv);;Excel Files (*.xlsx);;All Files (*)");
     if (!fileName.isEmpty()) {
         try {
-            CsvData data;
             bool success = false;
             
             if (fileName.endsWith(".xlsx", Qt::CaseInsensitive)) {
-                success = csvReader->readExcel(fileName, data);
+                success = csvReader->loadFromExcel(fileName);
             } else {
-                success = csvReader->readCsv(fileName, data);
+                success = csvReader->loadFromCsv(fileName);
             }
             
             if (success) {
                 // Add imported data to existing table (append mode)
+                QList<ContactData> contacts = csvReader->getContacts();
                 int importedCount = 0;
-                for (const auto &row : data.data) {
-                    if (row.size() >= 1 && !row[0].isEmpty()) { // At least email address
+                
+                for (const auto &contact : contacts) {
+                    if (!contact.email.isEmpty()) {
                         int tableRow = emailTable->rowCount();
                         emailTable->insertRow(tableRow);
-                        emailTable->setItem(tableRow, 0, new QTableWidgetItem(row[0])); // Email
-                        emailTable->setItem(tableRow, 1, new QTableWidgetItem(row.size() > 1 ? row[1] : "")); // Name
-                        emailTable->setItem(tableRow, 2, new QTableWidgetItem("Pending")); // Status
-                        emailTable->setItem(tableRow, 3, new QTableWidgetItem("")); // Notes
+                        emailTable->setItem(tableRow, 0, new QTableWidgetItem(contact.email));
+                        emailTable->setItem(tableRow, 1, new QTableWidgetItem(contact.getDisplayName()));
+                        emailTable->setItem(tableRow, 2, new QTableWidgetItem("Pending"));
+                        emailTable->setItem(tableRow, 3, new QTableWidgetItem(""));
                         importedCount++;
                     }
                 }
@@ -749,8 +750,8 @@ void MainWindow::importEmails()
                 showSuccess("Import Successful", 
                            QString("Imported %1 emails from %2").arg(importedCount).arg(QFileInfo(fileName).fileName()));
             } else {
-                showError("Import Failed", QString("Failed to import emails from %1:\n%2")
-                         .arg(QFileInfo(fileName).fileName(), csvReader->getLastError()));
+                showError("Import Failed", QString("Failed to import emails from %1")
+                         .arg(QFileInfo(fileName).fileName()));
             }
         } catch (const std::exception &e) {
             showError("Import Error", QString("An error occurred while importing: %1").arg(e.what()));
