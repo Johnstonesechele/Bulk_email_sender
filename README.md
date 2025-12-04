@@ -305,15 +305,32 @@ For technical support and issues:
 ```
 bulk-email-manager/
 ├── src/
-│   ├── main.cpp              # Application entry point
-│   ├── mainwindow.h/cpp      # Main window implementation
-│   ├── emailmanager.h/cpp    # Email sending functionality
-│   ├── emailcampaign.h/cpp   # Campaign management
-│   ├── database.h/cpp        # Data persistence
-│   ├── emailvalidator.h/cpp  # Email validation
-│   └── mainwindow.ui         # UI definition
-├── CMakeLists.txt            # Build configuration
-└── README.md                 # This file
+│   ├── main.cpp                    # Application entry point
+│   ├── mainwindow.h/cpp           # Main window implementation
+│   ├── emailmanager.h/cpp         # Email sending functionality
+│   ├── emailcampaign.h/cpp        # Campaign management
+│   ├── database.h/cpp             # Data persistence
+│   ├── emailvalidator.h/cpp       # Email validation
+│   ├── emailtemplate.h/cpp        # Email template management
+│   ├── templatemanager.h/cpp      # Template organization
+│   ├── templateeditor.h/cpp       # Template editor UI
+│   ├── htmlemailbuilder.h/cpp     # HTML email construction
+│   ├── csvreader.h/cpp            # CSV import/export
+│   ├── smtpemailsender.h/cpp      # SMTP email delivery
+│   ├── analytics.h/cpp            # Campaign analytics
+│   ├── logger.h/cpp               # Advanced logging system
+│   ├── contactlistmanager.h/cpp   # Contact management
+│   ├── appsettings.h/cpp          # Application settings
+│   ├── settingsdialog.h/cpp       # Settings UI
+│   ├── analyticsdashboard.h/cpp   # Analytics dashboard
+│   └── mainwindow.ui              # UI definition
+├── templates/                      # Built-in email templates
+├── docs/                          # Documentation
+│   └── SMTP_Configuration_Guide.md
+├── CMakeLists.txt                 # Build configuration
+├── build.bat                      # Windows build script
+├── run.bat                        # Quick run script
+└── README.md                      # This file
 ```
 
 ### Contributing
@@ -337,15 +354,27 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 ## Version History
 
-### v1.0.0 (Current)
-- Initial release
-- Basic email sending functionality
-- Campaign management
-- Data cleaning features
-- Modern dark theme UI
-- SQLite database support
-- CSV import/export
-- Email validation
+### v2.0.0 (Professional Edition - Current)
+- **Campaign Analytics & Reporting**: Real-time analytics dashboard with interactive charts
+- **Advanced Contact Management**: Multiple contact lists with tags, custom fields, and search
+- **Professional Email Templates**: HTML email builder with 5+ built-in templates and variables
+- **Advanced Logging System**: Multi-level logging with file rotation and export capabilities
+- **Comprehensive Settings**: Full application configuration with import/export support
+- **Network Diagnostics**: Built-in connection testing and DNS resolution tools
+- **Enhanced SMTP**: Connection pooling, retry logic, and detailed error reporting
+- **Data Analytics**: Provider analysis, delivery tracking, and performance metrics
+- **Backup & Restore**: Automatic database backups with configurable retention
+- **Professional UI**: Analytics dashboard, settings dialog, and improved user experience
+
+### v1.0.0 (Initial Release)
+- Initial release with basic email sending functionality
+- Campaign management and tracking
+- Data cleaning features with email validation
+- Modern dark theme UI with professional styling
+- SQLite database support for local storage
+- CSV import/export capabilities
+- RFC 5322 compliant email validation
+- Basic SMTP configuration and sending
 
 ---
 
