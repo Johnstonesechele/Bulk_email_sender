@@ -571,24 +571,26 @@ void MainWindow::saveEmailList()
     QString fileName = QFileDialog::getSaveFileName(this, "Save Email List", "", "CSV Files (*.csv);;Excel Files (*.xlsx);;All Files (*)");
     if (!fileName.isEmpty()) {
         try {
-            CsvData data;
-            data.headers = {"Email", "Name", "Status", "Notes"};
+            // Create ContactData list from table
+            QList<ContactData> contacts;
             
-            // Collect data from table
             for (int row = 0; row < emailTable->rowCount(); ++row) {
-                QStringList rowData;
-                for (int col = 0; col < emailTable->columnCount(); ++col) {
-                    QTableWidgetItem *item = emailTable->item(row, col);
-                    rowData << (item ? item->text() : "");
+                QTableWidgetItem *emailItem = emailTable->item(row, 0);
+                QTableWidgetItem *nameItem = emailTable->item(row, 1);
+                
+                if (emailItem && !emailItem->text().isEmpty()) {
+                    ContactData contact;
+                    contact.email = emailItem->text();
+                    contact.fullName = nameItem ? nameItem->text() : "";
+                    contacts.append(contact);
                 }
-                data.data.append(rowData);
             }
             
             bool success = false;
             if (fileName.endsWith(".xlsx", Qt::CaseInsensitive)) {
-                success = csvReader->writeExcel(fileName, data);
+                success = csvReader->exportToExcel(fileName, contacts);
             } else {
-                success = csvReader->writeCsv(fileName, data);
+                success = csvReader->exportToCsv(fileName, contacts);
             }
             
             if (success) {
@@ -597,8 +599,8 @@ void MainWindow::saveEmailList()
                 showSuccess("Export Successful", 
                            QString("Saved %1 emails to %2").arg(emailTable->rowCount()).arg(QFileInfo(fileName).fileName()));
             } else {
-                showError("Export Failed", QString("Failed to save emails to %1:\n%2")
-                         .arg(QFileInfo(fileName).fileName(), csvReader->getLastError()));
+                showError("Export Failed", QString("Failed to save emails to %1")
+                         .arg(QFileInfo(fileName).fileName()));
             }
         } catch (const std::exception &e) {
             showError("Export Error", QString("An error occurred while exporting: %1").arg(e.what()));
