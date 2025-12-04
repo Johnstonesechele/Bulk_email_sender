@@ -270,50 +270,53 @@ QList<EmailTemplate*> EmailTemplate::getBuiltInTemplates()
 EmailTemplate* EmailTemplate::createWelcomeTemplate()
 {
     QString htmlContent = R"(
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="utf-8">
-    <title>Welcome to {{company_name}}</title>
-    <style>
-        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-        .header { background-color: #4CAF50; color: white; padding: 20px; text-align: center; }
-        .content { padding: 20px; background-color: #f9f9f9; }
-        .button { background-color: #4CAF50; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; margin: 10px 0; }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="header">
-            <h1>Welcome to {{company_name}}!</h1>
-        </div>
-        <div class="content">
-            <h2>Hello {{first_name}}!</h2>
-            <p>We're excited to have you as part of our community. Your account has been successfully created.</p>
-            <p>Here are your account details:</p>
-            <ul>
-                <li><strong>Email:</strong> {{email}}</li>
-                <li><strong>Account Type:</strong> {{account_type}}</li>
-                <li><strong>Registration Date:</strong> {{registration_date}}</li>
-            </ul>
-            <p>To get started, please verify your email address:</p>
-            <a href="{{verification_link}}" class="button">Verify Email Address</a>
-            <p>If you have any questions, feel free to contact our support team.</p>
-            <p>Best regards,<br>The {{company_name}} Team</p>
-        </div>
-    </div>
-</body>
-</html>)";
+<div class="email-header">
+    <h1>Welcome to {{company_name}}!</h1>
+</div>
 
-    QString textContent = R"(
-Welcome to {{company_name}}!
+<div class="email-content">
+    <h2>Hello {{first_name}}!</h2>
+    
+    <p>Thank you for joining our community. We're excited to have you on board!</p>
+    
+    <div style="background-color: #f8f9fa; padding: 20px; margin: 20px 0; border-radius: 8px; border-left: 4px solid #28a745;">
+        <h3 style="margin-top: 0; color: #28a745;">Your Account Details</h3>
+        <p style="margin-bottom: 0;">
+            <strong>Email:</strong> {{email}}<br>
+            <strong>Account Type:</strong> {{account_type}}<br>
+            <strong>Registration Date:</strong> {{registration_date}}
+        </p>
+    </div>
+    
+    <div style="text-align: center; margin: 30px 0;">
+        <a href="{{verification_link}}" style="display: inline-block; padding: 15px 30px; background-color: #28a745; color: #ffffff; text-decoration: none; border-radius: 5px; font-weight: bold; font-size: 16px;">
+            Verify Your Email Address
+        </a>
+    </div>
+    
+    <h3>What's Next?</h3>
+    <ul style="line-height: 1.8;">
+        <li>Complete your profile setup</li>
+        <li>Explore our features and tools</li>
+        <li>Connect with our community</li>
+        <li>Contact support if you need help</li>
+    </ul>
+    
+    <p>If you have any questions, feel free to reach out to our support team at <a href="mailto:{{support_email}}" style="color: #007bff;">{{support_email}}</a></p>
+    
+    <p style="margin-top: 30px;">
+        Best regards,<br>
+        <strong>The {{company_name}} Team</strong>
+    </p>
+</div>)";
+
+    QString textContent = R"(Welcome to {{company_name}}!
 
 Hello {{first_name}},
 
-We're excited to have you as part of our community. Your account has been successfully created.
+Thank you for joining our community. We're excited to have you on board!
 
-Account Details:
+Your Account Details:
 - Email: {{email}}
 - Account Type: {{account_type}}
 - Registration Date: {{registration_date}}
@@ -321,11 +324,16 @@ Account Details:
 To get started, please verify your email address by visiting:
 {{verification_link}}
 
-If you have any questions, feel free to contact our support team.
+What's Next?
+- Complete your profile setup
+- Explore our features and tools
+- Connect with our community
+- Contact support if you need help
+
+If you have any questions, feel free to reach out to our support team at {{support_email}}
 
 Best regards,
-The {{company_name}} Team
-)";
+The {{company_name}} Team)";
 
     EmailTemplate* welcome = new EmailTemplate();
     welcome->setName("Welcome Email");
@@ -333,9 +341,9 @@ The {{company_name}} Team
     welcome->setHtmlContent(htmlContent);
     welcome->setTextContent(textContent);
     welcome->setType(TemplateType::Welcome);
-    welcome->setDescription("A warm welcome email for new users");
+    welcome->setDescription("Professional welcome email for new user onboarding");
     welcome->setCategory("Onboarding");
-    welcome->setTags({"welcome", "onboarding", "verification"});
+    welcome->setTags({"welcome", "onboarding", "verification", "new-user"});
     
     return welcome;
 }
@@ -343,66 +351,65 @@ The {{company_name}} Team
 EmailTemplate* EmailTemplate::createNewsletterTemplate()
 {
     QString htmlContent = R"(
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="utf-8">
-    <title>{{newsletter_title}}</title>
-    <style>
-        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; }
-        .container { max-width: 600px; margin: 0 auto; }
-        .header { background-color: #2196F3; color: white; padding: 20px; text-align: center; }
-        .content { padding: 20px; }
-        .article { margin-bottom: 30px; border-bottom: 1px solid #eee; padding-bottom: 20px; }
-        .article h3 { color: #2196F3; }
-        .footer { background-color: #f5f5f5; padding: 20px; text-align: center; font-size: 12px; }
-        .button { background-color: #2196F3; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="header">
-            <h1>{{newsletter_title}}</h1>
-            <p>{{newsletter_date}}</p>
+<div class="email-header">
+    <h1>{{newsletter_title}}</h1>
+    <p style="margin: 0; font-size: 14px; opacity: 0.9;">{{newsletter_date}}</p>
+</div>
+
+<div class="email-content">
+    <p>Hello {{first_name}},</p>
+    <p>{{newsletter_intro}}</p>
+    
+    <div style="border-bottom: 2px solid #007bff; margin: 30px 0 20px 0; padding-bottom: 10px;">
+        <h2 style="margin: 0; color: #007bff;">Featured Stories</h2>
+    </div>
+    
+    <article style="margin-bottom: 40px; padding-bottom: 30px; border-bottom: 1px solid #e0e0e0;">
+        <h3 style="color: #333; margin-bottom: 10px; font-size: 20px;">{{article_1_title}}</h3>
+        <p style="margin-bottom: 15px; color: #555;">{{article_1_summary}}</p>
+        <p>{{article_1_content}}</p>
+        <div style="margin-top: 15px;">
+            <a href="{{article_1_link}}" style="color: #007bff; font-weight: bold; text-decoration: none;">Continue Reading →</a>
         </div>
-        <div class="content">
-            <p>Hi {{first_name}},</p>
-            <p>{{newsletter_intro}}</p>
-            
-            <div class="article">
-                <h3>{{article_1_title}}</h3>
-                <p>{{article_1_content}}</p>
-                <a href="{{article_1_link}}" class="button">Read More</a>
-            </div>
-            
-            <div class="article">
-                <h3>{{article_2_title}}</h3>
-                <p>{{article_2_content}}</p>
-                <a href="{{article_2_link}}" class="button">Read More</a>
-            </div>
-            
-            <div class="article">
-                <h3>{{article_3_title}}</h3>
-                <p>{{article_3_content}}</p>
-                <a href="{{article_3_link}}" class="button">Read More</a>
-            </div>
+    </article>
+    
+    <article style="margin-bottom: 40px; padding-bottom: 30px; border-bottom: 1px solid #e0e0e0;">
+        <h3 style="color: #333; margin-bottom: 10px; font-size: 20px;">{{article_2_title}}</h3>
+        <p style="margin-bottom: 15px; color: #555;">{{article_2_summary}}</p>
+        <p>{{article_2_content}}</p>
+        <div style="margin-top: 15px;">
+            <a href="{{article_2_link}}" style="color: #007bff; font-weight: bold; text-decoration: none;">Continue Reading →</a>
         </div>
-        <div class="footer">
-            <p>Thank you for subscribing to {{company_name}} Newsletter</p>
-            <p><a href="{{unsubscribe_link}}">Unsubscribe</a> | <a href="{{preferences_link}}">Update Preferences</a></p>
+    </article>
+    
+    <article style="margin-bottom: 40px;">
+        <h3 style="color: #333; margin-bottom: 10px; font-size: 20px;">{{article_3_title}}</h3>
+        <p style="margin-bottom: 15px; color: #555;">{{article_3_summary}}</p>
+        <p>{{article_3_content}}</p>
+        <div style="margin-top: 15px;">
+            <a href="{{article_3_link}}" style="color: #007bff; font-weight: bold; text-decoration: none;">Continue Reading →</a>
+        </div>
+    </article>
+    
+    <div style="background-color: #f8f9fa; padding: 20px; margin: 30px 0; border-radius: 8px; text-align: center;">
+        <h3 style="margin-top: 0; color: #007bff;">Stay Connected</h3>
+        <p style="margin-bottom: 15px;">Follow us for more updates and insights</p>
+        <div>
+            <a href="{{website_link}}" style="display: inline-block; margin: 5px 10px; color: #007bff; text-decoration: none;">Website</a>
+            <a href="{{social_link}}" style="display: inline-block; margin: 5px 10px; color: #007bff; text-decoration: none;">Social Media</a>
+            <a href="{{blog_link}}" style="display: inline-block; margin: 5px 10px; color: #007bff; text-decoration: none;">Blog</a>
         </div>
     </div>
-</body>
-</html>)";
+</div>)";
 
     EmailTemplate* newsletter = new EmailTemplate();
     newsletter->setName("Newsletter Template");
     newsletter->setSubject("{{newsletter_title}} - {{newsletter_date}}");
     newsletter->setHtmlContent(htmlContent);
     newsletter->setType(TemplateType::Newsletter);
-    newsletter->setDescription("Professional newsletter template with multiple articles");
+    newsletter->setDescription("Professional newsletter template with featured articles and social links");
     newsletter->setCategory("Marketing");
-    newsletter->setTags({"newsletter", "marketing", "content"});
+    newsletter->setTags({"newsletter", "marketing", "content", "articles"});
     
     return newsletter;
 }

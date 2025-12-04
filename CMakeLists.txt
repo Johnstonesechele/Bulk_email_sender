@@ -23,6 +23,7 @@ set(SOURCES
     src/emailtemplate.cpp
     src/templatemanager.cpp
     src/templateeditor.cpp
+    src/htmlemailbuilder.cpp
 )
 
 set(HEADERS
@@ -34,6 +35,7 @@ set(HEADERS
     src/emailtemplate.h
     src/templatemanager.h
     src/templateeditor.h
+    src/htmlemailbuilder.h
 )
 
 set(UI_FILES
